@@ -1,0 +1,13 @@
+[package]
+name = "dprint_markdown_formatter_nif"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dprint_markdown_formatter_nif"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.35.0"
+dprint-plugin-markdown = "0.17.8"
+dprint-core = "0.66.2"
