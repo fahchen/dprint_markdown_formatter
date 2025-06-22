@@ -1,0 +1,1 @@
+- Run `mix format`, `mix credo` and `mix dialyzer` before commit

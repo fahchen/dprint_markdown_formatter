@@ -21,3 +21,41 @@ dprint_markdown_formatter-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Dialyzer PLT files
+*.plt
+*.plt.hash
+priv/plts/
+
+# Claude Code session data
+.claude/
+
+# Language servers and LSP
+.lexical/
+.elixir_ls/
+
+# Editor-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Log files
+*.log
+
+# Backup and temporary files
+*.bak
+*.orig
+*.tmp
