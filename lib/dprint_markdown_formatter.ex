@@ -20,21 +20,55 @@ defmodule DprintMarkdownFormatter do
 
   """
 
+  @behaviour Mix.Tasks.Format
+
   @doc """
-  Formats markdown text using default configuration.
+  Returns the features supported by this formatter plugin.
+
+  This plugin supports:
+  - The ~M sigil for markdown content
+  - Files with .md and .markdown extensions
+  """
+  @spec features(keyword()) :: [sigils: [atom()], extensions: [String.t()]]
+  def features(_opts) do
+    [sigils: [:M], extensions: [".md", ".markdown"]]
+  end
+
+  @doc """
+  Formats markdown text using dprint-plugin-markdown.
+
+  Returns the formatted string directly, or returns original content if formatting fails.
 
   ## Examples
 
-      iex> DprintMarkdownFormatter.format("# Hello    World")
-      {:ok, "# Hello World\\n"}
-      
-      iex> DprintMarkdownFormatter.format("  * item1\\n*   item2")
-      {:ok, "- item1\\n- item2\\n"}
+      iex> DprintMarkdownFormatter.format("# Hello    World", [])
+      "# Hello World\\n"
+
+      iex> DprintMarkdownFormatter.format("# Hello    World", extension: ".md")
+      "# Hello World\\n"
+
+      iex> DprintMarkdownFormatter.format("# Hello    World", sigil: :M)
+      "# Hello World"
   """
-  @spec format(String.t()) :: {:ok, String.t()} | {:error, String.t()}
-  def format(markdown_text) when is_binary(markdown_text) do
-    DprintMarkdownFormatter.Native.format_markdown(markdown_text)
+  @spec format(String.t(), keyword()) :: String.t()
+  def format(contents, opts) when is_binary(contents) and is_list(opts) do
+    case DprintMarkdownFormatter.Native.format_markdown(contents) do
+      {:ok, formatted} ->
+        # Handle different return types based on options
+        if Keyword.has_key?(opts, :sigil) do
+          # For sigils, remove trailing newline that dprint adds for consistency with sigil usage
+          String.trim_trailing(formatted, "\n")
+        else
+          formatted
+        end
+
+      {:error, _reason} ->
+        # If formatting fails, return original content unchanged
+        contents
+    end
   rescue
-    e -> {:error, "NIF error: #{inspect(e)}"}
+    _e ->
+      # If formatting fails, return original content unchanged
+      contents
   end
 end
