@@ -48,20 +48,24 @@ capabilities:
 
 ### Core Components
 
-- **DprintMarkdownFormatter**: Main Elixir module providing the public API
+- **DprintMarkdownFormatter**: Main Elixir module providing the public API with
+  Mix.exs configuration support
 - **DprintMarkdownFormatter.Native**: Rustler NIF wrapper for Rust functionality
+  with detailed type specifications
 - **DprintMarkdownFormatter.Sigil**: Provides ~M sigil for embedding markdown in
   Elixir code
 - **Rust NIF**: Located in `native/dprint_markdown_formatter_nif/`, wraps
-  dprint-plugin-markdown
+  dprint-plugin-markdown with configurable options
 
 ### Key Design Patterns
 
 - Uses Rustler to bridge Elixir and Rust for performance-critical markdown
   formatting
-- Provides both functional API (`format/1`) and syntactic sugar (~M sigil)
+- Provides both functional API (`format/2`) and syntactic sugar (~M sigil)
 - Rust NIF handles the actual markdown formatting using dprint-plugin-markdown
 - Error handling wraps NIF errors in Elixir tuples
+- Configuration can be set globally in `mix.exs` and overridden per call
+- Implements Mix.Tasks.Format behavior for integration with `mix format`
 
 ### File Structure
 
@@ -69,3 +73,35 @@ capabilities:
 - `native/dprint_markdown_formatter_nif/` - Rust NIF implementation
 - `test/` - Elixir tests
 - `priv/native/` - Compiled NIF binaries
+
+### Dependencies
+
+- **Rustler**: 0.36.2 (latest) - Elixir/Rust NIF bridge
+- **dprint-plugin-markdown**: 0.18.0 (latest) - Core markdown formatting
+- **dprint-core**: 0.67.4 - Core dprint functionality
+
+### Configuration
+
+Global formatting options can be configured in `mix.exs`:
+
+```elixir
+def project do
+  [
+    # ... other config
+    dprint_markdown_formatter: [
+      line_width: 100,
+      text_wrap: "never",
+      emphasis_kind: "underscores"
+    ]
+  ]
+end
+```
+
+Available options:
+
+- `:line_width` - Maximum line width (default: 80)
+- `:text_wrap` - "always", "never", "maintain" (default: "always")
+- `:emphasis_kind` - "asterisks", "underscores" (default: "asterisks")
+- `:strong_kind` - "asterisks", "underscores" (default: "asterisks")
+- `:new_line_kind` - "auto", "lf", "crlf" (default: "auto")
+- `:unordered_list_kind` - "dashes", "asterisks" (default: "dashes")
