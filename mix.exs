@@ -9,6 +9,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      dialyzer: [plt_add_apps: [:mix]],
       rustler_crates: [
         dprint_markdown_formatter_nif: [
           path: "native/dprint_markdown_formatter_nif",
