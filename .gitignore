@@ -59,3 +59,10 @@ Desktop.ini
 *.bak
 *.orig
 *.tmp
+
+# Rust/Rustler compiled artifacts
+/native/*/target/
+/priv/native/
+*.so
+*.dll
+*.dylib

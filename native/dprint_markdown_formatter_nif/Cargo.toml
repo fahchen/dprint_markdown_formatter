@@ -8,6 +8,6 @@ name = "dprint_markdown_formatter_nif"
 crate-type = ["cdylib"]
 
 [dependencies]
-rustler = "0.35.0"
-dprint-plugin-markdown = "0.17.8"
-dprint-core = "0.66.2"
+rustler = "0.36.0"
+dprint-plugin-markdown = "0.18.0"
+dprint-core = "0.67.4"
