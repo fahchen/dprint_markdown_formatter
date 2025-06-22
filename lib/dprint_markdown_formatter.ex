@@ -4,6 +4,20 @@ defmodule DprintMarkdownFormatter do
 
   This module provides an interface to format markdown text using the 
   dprint-plugin-markdown formatter implemented in Rust for performance.
+
+  ## Sigil Support
+
+  For convenient markdown handling, you can use the ~M sigil:
+
+      import DprintMarkdownFormatter.Sigil
+
+      # Raw markdown
+      markdown = ~M\"\"\"
+      # Hello World
+      
+      Some content here.
+      \"\"\"
+
   """
 
   @doc """
