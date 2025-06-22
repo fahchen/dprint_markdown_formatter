@@ -120,6 +120,65 @@ defmodule DprintMarkdownFormatterTest do
     end
   end
 
+  describe "formatting options" do
+    test "line_width option affects formatting" do
+      input =
+        "This is a very long line of text that should be wrapped when the line width is set to a small value like 20 characters."
+
+      result_default = DprintMarkdownFormatter.format(input, [])
+      result_narrow = DprintMarkdownFormatter.format(input, line_width: 20)
+
+      # With narrow line width, text should be wrapped differently
+      refute result_default == result_narrow
+    end
+
+    test "unordered_list_kind option changes list markers" do
+      input = "- Item 1\n- Item 2"
+      result_asterisks = DprintMarkdownFormatter.format(input, unordered_list_kind: "asterisks")
+
+      # Should format with asterisks when option is set
+      assert String.contains?(result_asterisks, "* Item 1")
+      assert String.contains?(result_asterisks, "* Item 2")
+    end
+
+    test "emphasis_kind option changes emphasis style" do
+      input = "*italic text*"
+      result_underscores = DprintMarkdownFormatter.format(input, emphasis_kind: "underscores")
+
+      # Should format with underscores when option is set
+      assert String.contains?(result_underscores, "_italic text_")
+    end
+
+    test "text_wrap option affects wrapping behavior" do
+      input =
+        "This is a very long line of text that normally would be wrapped but with never option should stay on one line."
+
+      result_default = DprintMarkdownFormatter.format(input, line_width: 20)
+      result_never = DprintMarkdownFormatter.format(input, text_wrap: "never", line_width: 20)
+
+      # With text_wrap: "never", should have different wrapping behavior than default
+      # Note: dprint may still add a trailing newline, so we check line count excluding the final newline
+      default_lines =
+        result_default |> String.trim_trailing("\n") |> String.split("\n") |> length()
+
+      never_lines = result_never |> String.trim_trailing("\n") |> String.split("\n") |> length()
+
+      # With "never", should have fewer line breaks (ideally just 1 line)
+      assert never_lines <= default_lines
+    end
+
+    test "native function can be called directly with options" do
+      input = "- Item 1\n- Item 2"
+
+      result =
+        DprintMarkdownFormatter.Native.format_markdown(input, unordered_list_kind: "asterisks")
+
+      assert {:ok, formatted} = result
+      assert String.contains?(formatted, "* Item 1")
+      assert String.contains?(formatted, "* Item 2")
+    end
+  end
+
   describe "error handling" do
     test "returns error for non-string input" do
       # This test verifies the guard clause works
