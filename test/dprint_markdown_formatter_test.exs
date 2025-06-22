@@ -1,8 +1,4 @@
 defmodule DprintMarkdownFormatterTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest DprintMarkdownFormatter
-
-  test "greets the world" do
-    assert DprintMarkdownFormatter.hello() == :world
-  end
 end
