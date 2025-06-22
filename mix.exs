@@ -8,7 +8,13 @@ defmodule DprintMarkdownFormatter.MixProject do
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      rustler_crates: [
+        dprint_markdown_formatter_nif: [
+          path: "native/dprint_markdown_formatter_nif",
+          mode: rustler_mode(Mix.env())
+        ]
+      ]
     ]
   end
 
@@ -22,6 +28,7 @@ defmodule DprintMarkdownFormatter.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:rustler, "~> 0.35.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
@@ -32,4 +39,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       check: ["format", "credo", "dialyzer"]
     ]
   end
+
+  defp rustler_mode(:prod), do: :release
+  defp rustler_mode(_), do: :debug
 end

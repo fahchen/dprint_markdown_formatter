@@ -1,1 +1,2 @@
 - Run `mix format`, `mix credo` and `mix dialyzer` before commit
+- Run `cargo fmt` and `cargo clippy` in the end
