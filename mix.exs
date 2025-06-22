@@ -36,7 +36,13 @@ defmodule DprintMarkdownFormatter.MixProject do
 
   defp aliases do
     [
-      check: ["format", "credo", "dialyzer"]
+      check: [
+        "cmd --cd native/dprint_markdown_formatter_nif cargo fmt",
+        "cmd --cd native/dprint_markdown_formatter_nif cargo clippy",
+        "format",
+        "credo",
+        "dialyzer"
+      ]
     ]
   end
 
