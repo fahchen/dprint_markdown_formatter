@@ -5,13 +5,23 @@ defmodule DprintMarkdownFormatter.Native do
   This module loads the Rust NIF that provides the actual formatting functionality.
   """
 
-  @rustler_mode if Mix.env() == :prod, do: :release, else: :debug
-
-  use Rustler,
+  use RustlerPrecompiled,
     otp_app: :dprint_markdown_formatter,
     crate: "dprint_markdown_formatter_nif",
-    path: "native/dprint_markdown_formatter_nif",
-    mode: @rustler_mode
+    base_url: "https://github.com/fahchen/dprint_markdown_formatter/releases/download",
+    force_build: System.get_env("RUSTLER_PRECOMPILED_FORCE_BUILD") in ["1", "true"] or Mix.env() in [:dev, :test],
+    version: Mix.Project.config()[:version],
+    nif_versions: ["2.16", "2.17"],
+    targets: ~w(
+      x86_64-unknown-linux-gnu
+      x86_64-unknown-linux-musl
+      aarch64-unknown-linux-gnu
+      aarch64-unknown-linux-musl
+      x86_64-apple-darwin
+      aarch64-apple-darwin
+      x86_64-pc-windows-msvc
+      x86_64-pc-windows-gnu
+    )
 
   @type text_wrap_option :: :always | :never | :maintain
   @type emphasis_kind_option :: :asterisks | :underscores
