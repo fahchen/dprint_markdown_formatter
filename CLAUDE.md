@@ -41,6 +41,12 @@ code in this repository.
 - After any Rust code changes, always run `cargo fmt` and `cargo clippy`
 - After any code changes, run `mix test` (handles both Elixir and Rust testing)
 
+### Precompiled Binaries
+
+- Uses `rustler_precompiled` for faster installs without requiring Rust toolchain
+- Set `RUSTLER_PRECOMPILED_FORCE_BUILD=true` to force compilation from source
+- Release workflow automatically builds binaries for multiple platforms
+
 ## Architecture
 
 This is a hybrid Elixir/Rust project that provides fast markdown formatting
