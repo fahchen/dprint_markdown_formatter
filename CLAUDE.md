@@ -43,7 +43,8 @@ code in this repository.
 
 ### Precompiled Binaries
 
-- Uses `rustler_precompiled` for faster installs without requiring Rust toolchain
+- Uses `rustler_precompiled` for faster installs without requiring Rust
+  toolchain
 - Set `RUSTLER_PRECOMPILED_FORCE_BUILD=true` to force compilation from source
 - Release workflow automatically builds binaries for multiple platforms
 
