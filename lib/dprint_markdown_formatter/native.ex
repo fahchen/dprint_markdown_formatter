@@ -9,7 +9,9 @@ defmodule DprintMarkdownFormatter.Native do
     otp_app: :dprint_markdown_formatter,
     crate: "dprint_markdown_formatter_nif",
     base_url: "https://github.com/fahchen/dprint_markdown_formatter/releases/download",
-    force_build: System.get_env("RUSTLER_PRECOMPILED_FORCE_BUILD") in ["1", "true"] or Mix.env() in [:dev, :test],
+    force_build:
+      System.get_env("RUSTLER_PRECOMPILED_FORCE_BUILD") in ["1", "true"] or
+        Mix.env() in [:dev, :test],
     version: Mix.Project.config()[:version],
     nif_versions: ["2.16", "2.17"],
     targets: ~w(
