@@ -33,9 +33,17 @@ code in this repository.
 
 - Always prefer `fd` over `find` for file searching
 - Always prefer `rg` over `grep` for text searching
+- Use `sourceror` for AST manipulation and transformation of Elixir code
+  - Sourceror provides robust parsing and code generation capabilities
+  - Documentation: https://hexdocs.pm/sourceror/readme.html
+  - Zipper API for AST traversal: https://hexdocs.pm/sourceror/zippers.html  
+  - Main module docs: https://hexdocs.pm/sourceror/Sourceror.html
+  - Examples: https://hexdocs.pm/sourceror/expand_multi_alias.html
 
 ### Code Change Workflow
 
+- **IMPORTANT**: Always run `mix format` immediately after making any file
+  changes
 - After any Elixir code changes, always run `mix format`, `mix credo` and
   `mix dialyzer`
 - After any Rust code changes, always run `cargo fmt` and `cargo clippy`
@@ -98,7 +106,14 @@ def project do
     dprint_markdown_formatter: [
       line_width: 100,
       text_wrap: "never",
-      emphasis_kind: "underscores"
+      emphasis_kind: "underscores",
+      format_attributes: [
+        moduledoc: true,
+        doc: true,
+        typedoc: true,
+        shortdoc: false,  # Disable @shortdoc formatting
+        deprecated: true
+      ]
     ]
   ]
 end
@@ -112,3 +127,21 @@ Available options:
 - `:strong_kind` - "asterisks", "underscores" (default: "asterisks")
 - `:new_line_kind` - "auto", "lf", "crlf" (default: "auto")
 - `:unordered_list_kind` - "dashes", "asterisks" (default: "dashes")
+- `:format_attributes` - Configure which module attributes to format (all
+  enabled by default)
+
+## Code Standards & Conventions
+
+### Function Organization and Visibility
+
+1. **Maximize function privacy**: Make functions private (`defp`) wherever
+   possible, keeping only essential functions in the public API. This improves
+   encapsulation and reduces the module's public surface area.
+
+2. **Proper function organization**: Always place public functions first,
+   followed by private functions under a "# Private helpers" comment section.
+   This follows standard Elixir conventions for better code readability.
+
+3. **Add type specifications**: Include `@spec` for all public functions to
+   improve code documentation, enable better tooling support, and catch
+   type-related issues early.
