@@ -23,7 +23,8 @@ defmodule DprintMarkdownFormatter.Native do
       aarch64-apple-darwin
       x86_64-pc-windows-msvc
       x86_64-pc-windows-gnu
-    )
+    ),
+    target_dir: Path.join(:code.priv_dir(:dprint_markdown_formatter), "native/target")
 
   @type text_wrap_option :: :always | :never | :maintain
   @type emphasis_kind_option :: :asterisks | :underscores
