@@ -26,8 +26,9 @@ code in this repository.
 
 ### Pre-commit Workflow
 
-- Run `mix check`, `mix test` before commit (mix check now includes cargo fmt
-  and cargo clippy)
+- Run `mix check && mix test` before commit to verify all checks pass
+- `mix check` includes: cargo fmt, cargo clippy, format, credo, and dialyzer
+- Always verify both quality checks and tests before committing
 
 ### Tool Preferences
 
@@ -107,7 +108,7 @@ def project do
       line_width: 100,
       text_wrap: "never",
       emphasis_kind: "underscores",
-      format_attributes: [
+      doc_attributes: [
         moduledoc: true,
         doc: true,
         typedoc: true,
@@ -127,8 +128,8 @@ Available options:
 - `:strong_kind` - "asterisks", "underscores" (default: "asterisks")
 - `:new_line_kind` - "auto", "lf", "crlf" (default: "auto")
 - `:unordered_list_kind` - "dashes", "asterisks" (default: "dashes")
-- `:format_attributes` - Configure which module attributes to format (all
-  enabled by default)
+- `:doc_attributes` - Configure which module attributes to format (all enabled
+  by default)
 
 ## Code Standards & Conventions
 

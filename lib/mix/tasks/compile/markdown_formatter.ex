@@ -17,7 +17,7 @@ defmodule Mix.Tasks.Compile.MarkdownFormatter do
             line_width: 100,
             text_wrap: "never",
             emphasis_kind: "underscores",
-            format_attributes: [
+            doc_attributes: [
               moduledoc: true,
               doc: true,
               typedoc: true,
@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Compile.MarkdownFormatter do
   @spec run(keyword()) :: :ok | :noop
   def run(opts) do
     config = get_config()
-    format_attributes = get_format_attributes(config)
+    format_attributes = get_doc_attributes(config)
 
     if Enum.any?(format_attributes, fn {_attr, enabled} -> enabled end) do
       manifest = manifest_path(opts)
@@ -87,7 +87,7 @@ defmodule Mix.Tasks.Compile.MarkdownFormatter do
     end
   end
 
-  defp get_format_attributes(config) do
+  defp get_doc_attributes(config) do
     default_attributes = [
       moduledoc: true,
       doc: true,
@@ -96,7 +96,7 @@ defmodule Mix.Tasks.Compile.MarkdownFormatter do
       deprecated: true
     ]
 
-    case Keyword.get(config, :format_attributes) do
+    case Keyword.get(config, :doc_attributes) do
       nil -> default_attributes
       attrs when is_list(attrs) -> Keyword.merge(default_attributes, attrs)
       _invalid -> default_attributes
