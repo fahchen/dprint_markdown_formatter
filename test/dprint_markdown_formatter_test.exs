@@ -199,14 +199,13 @@ defmodule DprintMarkdownFormatterTest do
     test "features/1 returns correct sigils and extensions" do
       features = DprintMarkdownFormatter.features([])
       assert features[:sigils] == [:M]
-      assert features[:extensions] == [".md", ".markdown"]
+      assert features[:extensions] == [".md", ".markdown", ".ex", ".exs"]
     end
 
     test "format/2 with sigil option removes trailing newline" do
       input = "# Header    with    spaces"
       result = DprintMarkdownFormatter.format(input, sigil: :M)
       assert result == "# Header with spaces"
-      refute String.ends_with?(result, "\n")
     end
 
     test "format/2 with extension keeps trailing newline" do
@@ -230,6 +229,55 @@ defmodule DprintMarkdownFormatterTest do
       input = "# Header    with    spaces"
       result = DprintMarkdownFormatter.format(input, [])
       assert result == "# Header with spaces\n"
+    end
+  end
+
+  describe "content type detection and routing" do
+    test "elixir source files return unchanged (placeholder)" do
+      input = """
+      defmodule Example do
+        @moduledoc \"\"\"
+        This is some   messy   markdown
+        \"\"\"
+      end
+      """
+
+      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+      assert result == input
+    end
+
+    test "elixir script files return unchanged (placeholder)" do
+      input = """
+      # This is an Elixir script
+      IO.puts "Hello"
+      """
+
+      result = DprintMarkdownFormatter.format(input, extension: ".exs")
+      assert result == input
+    end
+
+    test "sigil formatting with multiple lines" do
+      input = """
+      # Header   with   spaces
+
+      This is a   paragraph   with   irregular   spacing.
+
+      *  Item 1
+      *  Item 2
+
+      **Bold   text**   and   *italic   text*
+      """
+      result = DprintMarkdownFormatter.format(input, sigil: :M)
+
+      expected = "# Header with spaces\n\nThis is a paragraph with irregular spacing.\n\n- Item 1\n- Item 2\n\n**Bold text** and *italic text*"
+
+      assert result == expected
+    end
+
+    test "sigil takes precedence over extension" do
+      input = "# Header    with    spaces"
+      result = DprintMarkdownFormatter.format(input, sigil: :M, extension: ".ex")
+      assert result == "# Header with spaces"
     end
   end
 end

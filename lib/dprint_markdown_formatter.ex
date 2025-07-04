@@ -51,12 +51,13 @@ defmodule DprintMarkdownFormatter do
 
   This plugin supports:
   - The ~M sigil for markdown content
-  - Files with .md and .markdown extensions
+  - Files with .md and .markdown extensions (pure markdown)
+  - Files with .ex and .exs extensions (module attributes only)
   """
   @impl Mix.Tasks.Format
   @spec features(keyword()) :: [sigils: [atom()], extensions: [String.t()]]
   def features(_opts) do
-    [sigils: [:M], extensions: [".md", ".markdown"]]
+    [sigils: [:M], extensions: [".md", ".markdown", ".ex", ".exs"]]
   end
 
   @doc """
@@ -84,7 +85,41 @@ defmodule DprintMarkdownFormatter do
   @impl Mix.Tasks.Format
   @spec format(String.t(), keyword()) :: String.t()
   def format(contents, opts) when is_binary(contents) and is_list(opts) do
-    # Get dprint options from Mix.exs configuration and merge with runtime options
+    case determine_content_type(opts) do
+      :markdown ->
+        format_markdown(contents, opts)
+
+      :elixir_source ->
+        format_elixir_source(contents, opts)
+
+      :sigil ->
+        format_sigil(contents, opts)
+    end
+  rescue
+    _error ->
+      # If formatting fails, return original content unchanged
+      contents
+  end
+
+  # Private helpers
+
+  defp determine_content_type(opts) do
+    cond do
+      Keyword.has_key?(opts, :sigil) ->
+        :sigil
+
+      Keyword.get(opts, :extension) in [".ex", ".exs"] ->
+        :elixir_source
+
+      Keyword.get(opts, :extension) in [".md", ".markdown"] ->
+        :markdown
+
+      true ->
+        :markdown
+    end
+  end
+
+  defp format_markdown(contents, opts) do
     config_opts = get_config_from_mix()
 
     {runtime_dprint_opts, _format_opts} =
@@ -100,23 +135,21 @@ defmodule DprintMarkdownFormatter do
     dprint_opts = Keyword.merge(config_opts, runtime_dprint_opts)
 
     case DprintMarkdownFormatter.Native.format_markdown(contents, dprint_opts) do
-      {:ok, formatted} ->
-        # Handle different return types based on options
-        if Keyword.has_key?(opts, :sigil) do
-          # For sigils, remove trailing newline that dprint adds for consistency with sigil usage
-          String.trim_trailing(formatted, "\n")
-        else
-          formatted
-        end
-
-      {:error, _reason} ->
-        # If formatting fails, return original content unchanged
-        contents
+      {:ok, formatted} -> formatted
+      {:error, _reason} -> contents
     end
-  rescue
-    _error ->
-      # If formatting fails, return original content unchanged
-      contents
+  end
+
+  defp format_sigil(contents, opts) do
+    formatted = format_markdown(contents, opts)
+    # Remove trailing newline that dprint adds for consistency with sigil usage
+    String.trim_trailing(formatted, "\n")
+  end
+
+  defp format_elixir_source(contents, _opts) do
+    # Placeholder - will be implemented in Task 03
+    # For now, return contents unchanged
+    contents
   end
 
   defp get_config_from_mix do
@@ -127,19 +160,4 @@ defmodule DprintMarkdownFormatter do
     end
   end
 
-  defp get_doc_attributes(config) do
-    default_attributes = [
-      moduledoc: true,
-      doc: true,
-      typedoc: true,
-      shortdoc: true,
-      deprecated: true
-    ]
-
-    case Keyword.get(config, :doc_attributes) do
-      nil -> default_attributes
-      attrs when is_list(attrs) -> Keyword.merge(default_attributes, attrs)
-      _invalid -> default_attributes
-    end
-  end
 end
