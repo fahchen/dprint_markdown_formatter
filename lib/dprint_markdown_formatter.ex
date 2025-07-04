@@ -126,4 +126,20 @@ defmodule DprintMarkdownFormatter do
       _invalid -> []
     end
   end
+
+  defp get_doc_attributes(config) do
+    default_attributes = [
+      moduledoc: true,
+      doc: true,
+      typedoc: true,
+      shortdoc: true,
+      deprecated: true
+    ]
+
+    case Keyword.get(config, :doc_attributes) do
+      nil -> default_attributes
+      attrs when is_list(attrs) -> Keyword.merge(default_attributes, attrs)
+      _invalid -> default_attributes
+    end
+  end
 end
