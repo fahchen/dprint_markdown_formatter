@@ -53,6 +53,7 @@ defmodule DprintMarkdownFormatter do
   - The ~M sigil for markdown content
   - Files with .md and .markdown extensions
   """
+  @impl Mix.Tasks.Format
   @spec features(keyword()) :: [sigils: [atom()], extensions: [String.t()]]
   def features(_opts) do
     [sigils: [:M], extensions: [".md", ".markdown"]]
@@ -80,6 +81,7 @@ defmodule DprintMarkdownFormatter do
       iex> DprintMarkdownFormatter.format("* Item 1\\n* Item 2", unordered_list_kind: "asterisks")
       "* Item 1\\n* Item 2\\n"
   """
+  @impl Mix.Tasks.Format
   @spec format(String.t(), keyword()) :: String.t()
   def format(contents, opts) when is_binary(contents) and is_list(opts) do
     # Get dprint options from Mix.exs configuration and merge with runtime options
