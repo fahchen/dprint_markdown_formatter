@@ -36,7 +36,7 @@ code in this repository.
 - Use `sourceror` for AST manipulation and transformation of Elixir code
   - Sourceror provides robust parsing and code generation capabilities
   - Documentation: https://hexdocs.pm/sourceror/readme.html
-  - Zipper API for AST traversal: https://hexdocs.pm/sourceror/zippers.html  
+  - Zipper API for AST traversal: https://hexdocs.pm/sourceror/zippers.html
   - Main module docs: https://hexdocs.pm/sourceror/Sourceror.html
   - Examples: https://hexdocs.pm/sourceror/expand_multi_alias.html
 
