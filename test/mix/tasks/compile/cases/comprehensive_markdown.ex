@@ -44,6 +44,7 @@ defmodule TestModule do
 
   Returns `:ok`   when successful.
   """
+  @spec example_function(any(), any()) :: :ok
   def example_function(param1, param2 \\ nil) do
     :ok
   end
@@ -76,6 +77,7 @@ defmodule TestModule do
 
   See the [migration guide](https://example.com/migrate)   for details.
   """
+  @spec old_function() :: :legacy
   def old_function do
     :legacy
   end

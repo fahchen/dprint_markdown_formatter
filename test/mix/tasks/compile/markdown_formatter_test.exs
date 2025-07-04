@@ -12,9 +12,25 @@ defmodule Mix.Tasks.Compile.MarkdownFormatterTest do
 
         try do
           File.cd!(var!(tmp_dir))
-          System.cmd("mix", ["deps.get"], env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}])
-          System.cmd("mix", ["format"], env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}])
-          System.cmd("mix", ["compile"], env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}])
+
+          System.cmd("mix", ["deps.get"],
+            env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}],
+            into: "",
+            stderr_to_stdout: true
+          )
+
+          System.cmd("mix", ["format"],
+            env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}],
+            into: "",
+            stderr_to_stdout: true
+          )
+
+          System.cmd("mix", ["compile"],
+            env: [{"RUSTLER_PRECOMPILED_FORCE_BUILD", "true"}],
+            into: "",
+            stderr_to_stdout: true
+          )
+
           unquote(block)
         after
           File.cd!(original_cwd)
@@ -24,7 +40,7 @@ defmodule Mix.Tasks.Compile.MarkdownFormatterTest do
 
     # Generate tests for each case file using Path.wildcard
     for case_file_path <- Path.wildcard(Path.join([__DIR__, "cases", "*.ex"])) do
-      test_name = Path.basename(case_file_path, ".ex") |> String.replace("_", " ")
+      test_name = String.replace(Path.basename(case_file_path, ".ex"), "_", " ")
 
       test "formats #{test_name}", %{tmp_dir: tmp_dir} do
         test_case_path = unquote(case_file_path)
