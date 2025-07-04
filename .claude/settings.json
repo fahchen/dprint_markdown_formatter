@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "file updated, any file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mix do check + test"
+          }
+        ]
+      }
+    ]
+  }
+}
