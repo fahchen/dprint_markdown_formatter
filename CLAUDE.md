@@ -108,13 +108,18 @@ def project do
       line_width: 100,
       text_wrap: "never",
       emphasis_kind: "underscores",
-      doc_attributes: [
-        moduledoc: true,
-        doc: true,
-        typedoc: true,
-        shortdoc: false,  # Disable @shortdoc formatting
-        deprecated: true
-      ]
+      
+      # Enable formatting for default attributes (moduledoc, doc, typedoc, shortdoc, deprecated)
+      format_module_attributes: true,
+      
+      # Or disable all formatting (default behavior)
+      # format_module_attributes: nil,
+      
+      # Or specify custom attributes
+      # format_module_attributes: [:moduledoc, :doc, :custom_doc, :note],
+      
+      # Or use keyword list (backward compatibility)
+      # format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
     ]
   ]
 end
@@ -128,8 +133,34 @@ Available options:
 - `:strong_kind` - "asterisks", "underscores" (default: "asterisks")
 - `:new_line_kind` - "auto", "lf", "crlf" (default: "auto")
 - `:unordered_list_kind` - "dashes", "asterisks" (default: "dashes")
-- `:doc_attributes` - Configure which module attributes to format (all enabled
-  by default)
+- `:format_module_attributes` - Configure which module attributes to format.
+  Supports four input types for maximum flexibility:
+
+  **`nil` (default):** Skip formatting all module attributes.
+
+  **Boolean `true`:** Format common documentation attributes: `:moduledoc`,
+  `:doc`, `:typedoc`, `:shortdoc`, `:deprecated`
+
+  **Boolean `false`:** Skip formatting all module attributes.
+
+  **List of atoms:** Format only the specified attributes. Any module attribute
+  containing string content can be specified. Examples:
+
+      # Format only module docs
+      format_module_attributes: [:moduledoc]
+
+      # Format standard docs plus custom attributes  
+      format_module_attributes: [:moduledoc, :doc, :custom_doc, :note, :example]
+
+      # Format testing attributes
+      format_module_attributes: [:moduletag, :tag, :describetag]
+
+  **Keyword list (backward compatibility):** Use enabled/disabled flags:
+
+      format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
+
+  Only string values are processed (boolean `false` and keyword lists are
+  preserved unchanged). Use `default_doc_attributes/0` to get the standard list.
 
 ## Code Standards & Conventions
 

@@ -2,7 +2,8 @@ defmodule DprintMarkdownFormatter.Native do
   @moduledoc """
   Native interface for dprint markdown formatting using Rustler.
 
-  This module loads the Rust NIF that provides the actual formatting functionality.
+  This module loads the Rust NIF that provides the actual formatting
+  functionality.
   """
 
   use RustlerPrecompiled,
@@ -44,7 +45,8 @@ defmodule DprintMarkdownFormatter.Native do
   @doc """
   Formats markdown text with configurable options.
 
-  This function is implemented in Rust and provides the core formatting functionality.
+  This function is implemented in Rust and provides the core formatting
+  functionality.
   """
   @spec format_markdown(String.t(), format_options) :: {:ok, String.t()} | {:error, String.t()}
   def format_markdown(_text, _options), do: :erlang.nif_error(:nif_not_loaded)
