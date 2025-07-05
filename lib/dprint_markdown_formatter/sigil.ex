@@ -2,8 +2,8 @@ defmodule DprintMarkdownFormatter.Sigil do
   @moduledoc """
   Provides the ~M sigil for embedding markdown content in Elixir code.
 
-  The ~M sigil creates markdown strings that can be used directly in your application
-  without any additional processing.
+  The ~M sigil creates markdown strings that can be used directly in your
+  application without any additional processing.
 
   ## Usage
 
@@ -48,7 +48,6 @@ defmodule DprintMarkdownFormatter.Sigil do
       iex> import DprintMarkdownFormatter.Sigil
       iex> ~M"**Bold** and *italic* text"
       "**Bold** and *italic* text"
-
   """
   @spec sigil_M(binary(), list()) :: binary()
   def sigil_M(markdown, _modifiers) when is_binary(markdown) do
