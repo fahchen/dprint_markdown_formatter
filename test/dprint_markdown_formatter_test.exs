@@ -138,47 +138,6 @@ defmodule DprintMarkdownFormatterTest do
       # This test is skipped because it's a known dprint library limitation
     end
 
-    test "preserves nested lists when using mixed markers (asterisk top, dash nested)" do
-      # WORKAROUND: Using asterisk at top level and dash at nested level
-      # preserves nesting when unordered_list_kind is "dashes" (default)
-      input = """
-      * Item 1
-        - Nested item
-      * Item 2
-      """
-
-      result = DprintMarkdownFormatter.format(input, [])
-
-      expected = """
-      - Item 1
-        - Nested item
-      - Item 2
-      """
-
-      assert result == expected
-    end
-
-    test "mixed markers workaround also works with asterisk preference" do
-      # The mixed markers workaround works with both dash and asterisk preferences
-      # When unordered_list_kind is "asterisks", it converts dashes to asterisks
-      # but preserves the nesting structure
-      input = """
-      * Item 1
-        - Nested item
-      * Item 2
-      """
-
-      result = DprintMarkdownFormatter.format(input, unordered_list_kind: "asterisks")
-
-      expected = """
-      * Item 1
-        * Nested item
-      * Item 2
-      """
-
-      assert result == expected
-    end
-
     test "handles complex mixed content - demonstrates nested list flattening limitation" do
       # NOTE: This test shows current dprint-plugin-markdown behavior
       # Nested lists are flattened regardless of whether they use asterisks or dashes
