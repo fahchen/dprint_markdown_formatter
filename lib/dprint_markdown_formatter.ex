@@ -74,21 +74,6 @@ defmodule DprintMarkdownFormatter do
     Only string values are processed (boolean `false` and keyword lists are
     preserved unchanged). Use `default_doc_attributes/0` to get the standard list.
 
-  ## Nested List Workaround
-
-  Due to a limitation in dprint-plugin-markdown, nested lists using the same
-  marker type (all dashes or all asterisks) lose their indentation. To preserve
-  nested list structure, use mixed markers:
-
-      * Top level item
-        - Nested item
-      * Another top level item
-
-  This workaround works with both `unordered_list_kind` settings:
-
-  - With `:dashes` (default): converts to `- Top level\n  - Nested`
-  - With `:asterisks`: converts to `* Top level\n  * Nested`
-
   ## Sigil Support
 
   For convenient markdown handling, you can use the ~M sigil:
