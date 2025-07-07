@@ -24,10 +24,7 @@ defmodule DprintMarkdownFormatter do
             # format_module_attributes: nil,
 
             # Or specify custom attributes
-            # format_module_attributes: [:moduledoc, :doc, :custom_doc, :note],
-
-            # Or use keyword list (backward compatibility)
-            # format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
+            # format_module_attributes: [:moduledoc, :doc, :custom_doc, :note]
           ]
         ]
       end
@@ -67,12 +64,8 @@ defmodule DprintMarkdownFormatter do
         # Format testing attributes
         format_module_attributes: [:moduletag, :tag, :describetag]
 
-    **Keyword list (backward compatibility):** Use enabled/disabled flags:
-
-        format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
-
-    Only string values are processed (boolean `false` and keyword lists are
-    preserved unchanged). Use `default_doc_attributes/0` to get the standard list.
+    Only string values are processed (boolean `false` values are preserved
+    unchanged). Use `default_doc_attributes/0` to get the standard list.
 
   ## Sigil Support
 
@@ -263,7 +256,7 @@ defmodule DprintMarkdownFormatter do
               result <> "\n"
             end
           rescue
-            _ -> patched_content
+            _error -> patched_content
           end
 
         {:ok, formatted_content}
@@ -372,16 +365,8 @@ defmodule DprintMarkdownFormatter do
         []
 
       attrs when is_list(attrs) ->
-        # Check if this is a keyword list (old format) or simple list (new format)
-        if Keyword.keyword?(attrs) do
-          # Old format: [moduledoc: true, tag: false] - filter enabled attributes
-          attrs
-          |> Enum.filter(fn {_attr, enabled} -> enabled end)
-          |> Enum.map(fn {attr, _enabled} -> attr end)
-        else
-          # New format: [:moduledoc, :tag] - use as-is
-          attrs
-        end
+        # List of atoms: [:moduledoc, :doc, :custom_doc]
+        attrs
 
       # Invalid config disables formatting
       _invalid ->

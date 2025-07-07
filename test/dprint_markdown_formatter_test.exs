@@ -672,12 +672,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduledoc: true,
-
-              # Disable @shortdoc formatting
-              shortdoc: false
-            ]
+            format_module_attributes: [:moduledoc]
           ]
         ]
       end)
@@ -708,16 +703,11 @@ defmodule DprintMarkdownFormatterTest do
       end
       '''
 
-      # Mock configuration to disable @doc formatting
+      # Mock configuration to only format @moduledoc
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduledoc: true,
-
-              # Disable @doc formatting
-              doc: false
-            ]
+            format_module_attributes: [:moduledoc]
           ]
         ]
       end)
@@ -774,9 +764,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true
-            ]
+            format_module_attributes: [:moduletag]
           ]
         ]
       end)
@@ -806,9 +794,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true
-            ]
+            format_module_attributes: [:moduletag]
           ]
         ]
       end)
@@ -850,9 +836,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              tag: true
-            ]
+            format_module_attributes: [:tag]
           ]
         ]
       end)
@@ -888,9 +872,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              tag: true
-            ]
+            format_module_attributes: [:tag]
           ]
         ]
       end)
@@ -920,9 +902,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              describetag: true
-            ]
+            format_module_attributes: [:describetag]
           ]
         ]
       end)
@@ -974,11 +954,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true,
-              tag: false,
-              describetag: false
-            ]
+            format_module_attributes: [:moduletag]
           ]
         ]
       end)
@@ -1007,11 +983,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true,
-              tag: true,
-              describetag: true
-            ]
+            format_module_attributes: [:moduletag, :tag, :describetag]
           ]
         ]
       end)
@@ -1038,11 +1010,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true,
-              tag: true,
-              describetag: true
-            ]
+            format_module_attributes: [:moduletag, :tag, :describetag]
           ]
         ]
       end)
@@ -1076,11 +1044,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true,
-              tag: true,
-              describetag: true
-            ]
+            format_module_attributes: [:moduletag, :tag, :describetag]
           ]
         ]
       end)
@@ -1118,11 +1082,7 @@ defmodule DprintMarkdownFormatterTest do
       expect(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduletag: true,
-              tag: true,
-              describetag: true
-            ]
+            format_module_attributes: [:moduletag, :tag, :describetag]
           ]
         ]
       end)
@@ -1332,46 +1292,6 @@ defmodule DprintMarkdownFormatterTest do
       # Content should remain unchanged since invalid config disables formatting
       result = DprintMarkdownFormatter.format(input, extension: ".ex")
       assert result == input
-    end
-
-    test "keyword list format (backward compatibility) still works" do
-      input = ~S'''
-      defmodule Example do
-        @moduledoc """
-        This is   module   documentation.
-        """
-
-        @custom_attr "This should   not   be   formatted."
-        @note "This should   be   formatted."
-      end
-      '''
-
-      expected = ~S'''
-      defmodule Example do
-        @moduledoc """
-        This is module documentation.
-        """
-
-        @custom_attr "This should   not   be   formatted."
-        @note "This should be formatted."
-      end
-      '''
-
-      # Mock configuration with keyword list (old format)
-      expect(Mix.Project, :config, fn ->
-        [
-          dprint_markdown_formatter: [
-            format_module_attributes: [
-              moduledoc: true,
-              note: true,
-              custom_attr: false
-            ]
-          ]
-        ]
-      end)
-
-      result = DprintMarkdownFormatter.format(input, extension: ".ex")
-      assert result == expected
     end
   end
 end
