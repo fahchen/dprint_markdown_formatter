@@ -116,10 +116,7 @@ def project do
       # format_module_attributes: nil,
       
       # Or specify custom attributes
-      # format_module_attributes: [:moduledoc, :doc, :custom_doc, :note],
-      
-      # Or use keyword list (backward compatibility)
-      # format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
+      # format_module_attributes: [:moduledoc, :doc, :custom_doc, :note]
     ]
   ]
 end
@@ -155,12 +152,8 @@ Available options:
       # Format testing attributes
       format_module_attributes: [:moduletag, :tag, :describetag]
 
-  **Keyword list (backward compatibility):** Use enabled/disabled flags:
-
-      format_module_attributes: [moduledoc: true, shortdoc: false, custom_attr: true]
-
-  Only string values are processed (boolean `false` and keyword lists are
-  preserved unchanged). Use `default_doc_attributes/0` to get the standard list.
+  Only string values are processed (boolean `false` values are preserved
+  unchanged). Use `default_doc_attributes/0` to get the standard list.
 
 ## Code Standards & Conventions
 
