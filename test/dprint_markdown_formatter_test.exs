@@ -601,6 +601,81 @@ defmodule DprintMarkdownFormatterTest do
       assert result == expected
     end
 
+    test "formats module attributes in nested modules correctly" do
+      input = ~S'''
+      defmodule Outer do
+        @moduledoc """
+        This is   the   outer   module   documentation.
+
+        It provides   functionality   for   nested   modules.
+        """
+
+        defmodule Inner do
+          @moduledoc """
+          This is   the   inner   module   documentation.
+          """
+
+          @doc """
+          This function   performs   inner   operations.
+
+          ## Examples
+
+              iex> Outer.Inner.perform()
+              :ok
+          """
+          def perform do
+            custom_function arg1
+            :ok
+          end
+
+          @typedoc "This type   represents   inner   data   structures."
+          @type inner_type :: :ok | :error
+        end
+
+        @doc "This function   delegates   to   inner   module."
+        def delegate, do: Inner.perform()
+      end
+      '''
+
+      expected = ~S'''
+      defmodule Outer do
+        @moduledoc """
+        This is the outer module documentation.
+
+        It provides functionality for nested modules.
+        """
+
+        defmodule Inner do
+          @moduledoc """
+          This is the inner module documentation.
+          """
+
+          @doc """
+          This function performs inner operations.
+
+          ## Examples
+
+              iex> Outer.Inner.perform()
+              :ok
+          """
+          def perform do
+            custom_function arg1
+            :ok
+          end
+
+          @typedoc "This type represents inner data structures."
+          @type inner_type :: :ok | :error
+        end
+
+        @doc "This function delegates to inner module."
+        def delegate, do: Inner.perform()
+      end
+      '''
+
+      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+      assert result == expected
+    end
+
     test "preserves non-markdown content unchanged" do
       input = ~S'''
       defmodule Example do
