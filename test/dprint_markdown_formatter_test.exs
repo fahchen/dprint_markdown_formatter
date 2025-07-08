@@ -345,7 +345,7 @@ defmodule DprintMarkdownFormatterTest do
       # Header with spaces
       """
 
-      IO.puts("Hello")
+      IO.puts "Hello"
       '''
 
       result = DprintMarkdownFormatter.format(input, extension: ".exs")
@@ -1090,6 +1090,36 @@ defmodule DprintMarkdownFormatterTest do
 
       result = DprintMarkdownFormatter.format(input, extension: ".ex")
       assert result == expected
+    end
+  end
+
+  describe "elixir formatter configuration issues" do
+    test "elixir formatter ignores locals_without_parens configuration" do
+      # This test demonstrates that the elixir formatter doesn't respect
+      # the locals_without_parens configuration from .formatter.exs
+
+      input = ~S'''
+      defmodule Example do
+        def test_function do
+          custom_function arg1
+        end
+      end
+      '''
+
+      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+
+      # The result should be the same as input since locals_without_parens should be respected
+      # This test should fail because the elixir formatter doesn't respect locals_without_parens
+      assert result == input, """
+      Expected elixir formatter to respect locals_without_parens configuration,
+      but it added parentheses to function calls that should remain without them.
+
+      Expected (same as input):
+      #{input}
+
+      Actual:
+      #{result}
+      """
     end
   end
 

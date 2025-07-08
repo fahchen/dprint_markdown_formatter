@@ -283,9 +283,8 @@ defmodule DprintMarkdownFormatter do
   defp format_module_attributes(content, doc_attributes, config) do
     with {:ok, ast} <- parse_elixir_source(content),
          {:ok, patches} <- collect_patches_for_doc_attributes(ast, doc_attributes, config),
-         {:ok, patched_content} <- apply_patches(content, patches),
-         {:ok, formatted_content} <- apply_elixir_formatter(patched_content) do
-      {:ok, formatted_content}
+         {:ok, patched_content} <- apply_patches(content, patches) do
+      {:ok, patched_content}
     else
       {:error, error} -> {:error, error}
     end
@@ -302,30 +301,14 @@ defmodule DprintMarkdownFormatter do
   end
 
   defp apply_patches(content, patches) do
-    patched_content = Sourceror.patch_string(content, patches)
+    patched_content =
+      content
+      |> Sourceror.patch_string(patches)
+      |> final_cleanup_whitespace()
+
     {:ok, patched_content}
   rescue
     error -> {:error, Error.format_error("Failed to apply patches", original_error: error)}
-  end
-
-  defp apply_elixir_formatter(content) do
-    result =
-      content
-      |> Code.format_string!()
-      |> IO.iodata_to_binary()
-
-    # Ensure it ends with a newline
-    formatted =
-      if String.ends_with?(result, "\n") do
-        result
-      else
-        result <> "\n"
-      end
-
-    {:ok, formatted}
-  rescue
-    error ->
-      {:error, Error.format_error("Failed to apply Elixir formatter", original_error: error)}
   end
 
   defp collect_patches_for_doc_attributes(ast, doc_attributes, config) do
@@ -411,7 +394,7 @@ defmodule DprintMarkdownFormatter do
     if String.contains?(formatted, "\n") do
       # Convert to heredoc if content becomes multi-line
       indented_content = indent_content_for_heredoc(formatted)
-      "\"\"\"\n#{indented_content}\n  \"\"\""
+      "\"\"\"\n#{indented_content}\n\"\"\""
     else
       # Keep as simple string
       "\"#{formatted}\""
@@ -420,20 +403,24 @@ defmodule DprintMarkdownFormatter do
 
   defp build_heredoc_replacement(formatted) do
     # Heredoc format - preserve as heredoc
-    indented_content = indent_content_for_heredoc(formatted)
-    "\"\"\"\n#{indented_content}\n  \"\"\""
+    indented_content =
+      formatted
+      # Clean empty lines before indenting
+      |> clean_empty_lines()
+      |> indent_content_for_heredoc()
+
+    "\"\"\"\n#{indented_content}\n\"\"\""
   end
 
   defp indent_content_for_heredoc(content) do
+    # Keep content without additional indentation for heredoc
     content
     |> String.split("\n")
     |> Enum.map_join("\n", fn line ->
       if String.trim(line) == "" do
-        # Keep empty lines completely empty
         ""
       else
-        # Add 2-space indentation to non-empty lines
-        "  #{line}"
+        line
       end
     end)
   end
@@ -441,7 +428,10 @@ defmodule DprintMarkdownFormatter do
   defp format_markdown_content(content, config) do
     nif_config = Config.to_nif_config(config)
 
-    case DprintMarkdownFormatter.Native.format_markdown(content, nif_config) do
+    # Clean up content by removing leading indentation and normalizing empty lines
+    clean_content = normalize_heredoc_content(content)
+
+    case DprintMarkdownFormatter.Native.format_markdown(clean_content, nif_config) do
       {:ok, formatted} ->
         # For heredocs, remove the trailing newline that dprint adds
         # The heredoc structure will handle proper formatting
@@ -449,6 +439,63 @@ defmodule DprintMarkdownFormatter do
 
       {:error, reason} ->
         {:error, Error.nif_error("Failed to format markdown content", original_error: reason)}
+    end
+  end
+
+  defp final_cleanup_whitespace(content) do
+    # Final pass to clean up any remaining whitespace-only lines in heredocs
+    # This catches cases where Sourceror or intermediate processing leaves trailing spaces
+    String.replace(content, ~r/^[ \t]+$/m, "")
+  end
+
+  defp clean_empty_lines(content) do
+    # Use regex to replace any line that contains only whitespace with an empty line
+    String.replace(content, ~r/^[ \t]+$/m, "")
+  end
+
+  defp normalize_heredoc_content(content) do
+    # Simple approach: split lines, find common indentation, remove it
+    lines = String.split(content, "\n")
+
+    # Filter out empty lines to find minimum indentation
+    content_lines = Enum.reject(lines, &(String.trim(&1) == ""))
+
+    if Enum.empty?(content_lines) do
+      ""
+    else
+      # Find the minimum number of leading spaces
+      min_spaces =
+        content_lines
+        |> Enum.map(fn line ->
+          leading_spaces = String.length(line) - String.length(String.trim_leading(line, " "))
+          leading_spaces
+        end)
+        |> Enum.min()
+
+      # Remove that many spaces from the beginning of each line
+      Enum.map_join(lines, "\n", fn line ->
+        process_line_for_normalization(line, min_spaces)
+      end)
+    end
+  end
+
+  defp process_line_for_normalization(line, min_spaces) do
+    # Always check if line is empty first, regardless of spaces
+    if String.trim(line) == "" do
+      ""
+    else
+      # Remove min_spaces from the start, but don't go past the line length
+      spaces_to_remove =
+        min(min_spaces, String.length(line) - String.length(String.trim_leading(line, " ")))
+
+      processed_line = String.slice(line, spaces_to_remove..-1//1)
+
+      # If the line becomes empty or contains only whitespace after processing, make it truly empty
+      if String.trim(processed_line) == "" do
+        ""
+      else
+        processed_line
+      end
     end
   end
 end
