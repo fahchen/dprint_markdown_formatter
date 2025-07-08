@@ -1,8 +1,9 @@
 use dprint_core::configuration::NewLineKind;
 use dprint_plugin_markdown::{configuration::Configuration, format_text};
 use rustler::{Atom, Term};
+use std::collections::HashMap;
 
-// Define atom constants for option matching
+// Define atom constants
 rustler::atoms! {
     line_width,
     text_wrap,
@@ -10,135 +11,141 @@ rustler::atoms! {
     strong_kind,
     new_line_kind,
     unordered_list_kind,
+    always,
+    never,
+    maintain,
+    asterisks,
+    underscores,
+    auto,
+    lf,
+    crlf,
+    dashes,
 }
 
-#[derive(Debug, Default)]
-struct FormatOptions {
-    line_width: Option<u32>,
-    text_wrap: Option<String>,
-    emphasis_kind: Option<String>,
-    strong_kind: Option<String>,
-    new_line_kind: Option<String>,
-    unordered_list_kind: Option<String>,
-}
-
-fn parse_options(options: Term) -> FormatOptions {
-    let mut format_options = FormatOptions::default();
-
-    // Try decoding as keyword list with atom keys first
-    if let Ok(keyword_list) = options.decode::<Vec<(Atom, Term)>>() {
-        for (key_atom, value) in keyword_list {
-            if key_atom == line_width() {
-                if let Ok(width) = value.decode::<u32>() {
-                    format_options.line_width = Some(width);
-                }
-            } else if key_atom == text_wrap() {
-                if let Ok(wrap) = value.decode::<String>() {
-                    format_options.text_wrap = Some(wrap);
-                }
-            } else if key_atom == emphasis_kind() {
-                if let Ok(kind) = value.decode::<String>() {
-                    format_options.emphasis_kind = Some(kind);
-                }
-            } else if key_atom == strong_kind() {
-                if let Ok(kind) = value.decode::<String>() {
-                    format_options.strong_kind = Some(kind);
-                }
-            } else if key_atom == new_line_kind() {
-                if let Ok(kind) = value.decode::<String>() {
-                    format_options.new_line_kind = Some(kind);
-                }
-            } else if key_atom == unordered_list_kind() {
-                if let Ok(kind) = value.decode::<String>() {
-                    format_options.unordered_list_kind = Some(kind);
-                }
-            }
-        }
-    } else if let Ok(keyword_list) = options.decode::<Vec<(String, Term)>>() {
-        // Fallback: try decoding as keyword list with string keys
-        for (key, value) in keyword_list {
-            match key.as_str() {
-                "line_width" => {
-                    if let Ok(width) = value.decode::<u32>() {
-                        format_options.line_width = Some(width);
-                    }
-                }
-                "text_wrap" => {
-                    if let Ok(wrap) = value.decode::<String>() {
-                        format_options.text_wrap = Some(wrap);
-                    }
-                }
-                "emphasis_kind" => {
-                    if let Ok(kind) = value.decode::<String>() {
-                        format_options.emphasis_kind = Some(kind);
-                    }
-                }
-                "strong_kind" => {
-                    if let Ok(kind) = value.decode::<String>() {
-                        format_options.strong_kind = Some(kind);
-                    }
-                }
-                "new_line_kind" => {
-                    if let Ok(kind) = value.decode::<String>() {
-                        format_options.new_line_kind = Some(kind);
-                    }
-                }
-                "unordered_list_kind" => {
-                    if let Ok(kind) = value.decode::<String>() {
-                        format_options.unordered_list_kind = Some(kind);
-                    }
-                }
-                _ => {} // Ignore unknown options
-            }
-        }
+/// Simple NIF function that receives a config map from Elixir
+/// The map contains only the 6 dprint-related fields (no format_module_attributes)
+/// Elixir is the single source of truth for configuration validation
+#[rustler::nif]
+fn format_markdown(text: String, config: HashMap<Atom, Term>) -> Result<String, String> {
+    // Early return for empty text
+    if text.is_empty() {
+        return Ok(text);
     }
 
-    format_options
+    // Convert config map to dprint Configuration
+    let dprint_config = build_dprint_config(config)?;
+
+    // Format the text using dprint-plugin-markdown
+    format_text(&text, &dprint_config, |_, _, _| Ok(None))
+        .map_err(|e| format!("Formatting failed: {}", e))
+        .map(|result| result.unwrap_or(text))
 }
 
-#[rustler::nif]
-fn format_markdown(text: String, options: Term) -> Result<String, String> {
-    let opts = parse_options(options);
+/// Build dprint Configuration from config map provided by Elixir
+/// Elixir provides ALL values with proper validation
+fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String> {
+    let line_width = map
+        .get(&line_width())
+        .ok_or("Missing line_width")?
+        .decode::<u32>()
+        .map_err(|_| "Invalid line_width")?;
 
-    // Create configuration with defaults, overridden by options
-    let config = Configuration {
-        line_width: opts.line_width.unwrap_or(80),
-        text_wrap: match opts.text_wrap.as_deref() {
-            Some("never") => dprint_plugin_markdown::configuration::TextWrap::Never,
-            Some("maintain") => dprint_plugin_markdown::configuration::TextWrap::Maintain,
-            _ => dprint_plugin_markdown::configuration::TextWrap::Always,
-        },
-        emphasis_kind: match opts.emphasis_kind.as_deref() {
-            Some("underscores") => dprint_plugin_markdown::configuration::EmphasisKind::Underscores,
-            _ => dprint_plugin_markdown::configuration::EmphasisKind::Asterisks,
-        },
-        strong_kind: match opts.strong_kind.as_deref() {
-            Some("underscores") => dprint_plugin_markdown::configuration::StrongKind::Underscores,
-            _ => dprint_plugin_markdown::configuration::StrongKind::Asterisks,
-        },
-        new_line_kind: match opts.new_line_kind.as_deref() {
-            Some("lf") => NewLineKind::LineFeed,
-            Some("crlf") => NewLineKind::CarriageReturnLineFeed,
-            _ => NewLineKind::Auto,
-        },
-        unordered_list_kind: match opts.unordered_list_kind.as_deref() {
-            Some("asterisks") => {
-                dprint_plugin_markdown::configuration::UnorderedListKind::Asterisks
-            }
-            _ => dprint_plugin_markdown::configuration::UnorderedListKind::Dashes,
-        },
+    let text_wrap = {
+        let wrap_atom = map
+            .get(&text_wrap())
+            .ok_or("Missing text_wrap")?
+            .decode::<Atom>()
+            .map_err(|_| "Invalid text_wrap")?;
+
+        if wrap_atom == always() {
+            dprint_plugin_markdown::configuration::TextWrap::Always
+        } else if wrap_atom == never() {
+            dprint_plugin_markdown::configuration::TextWrap::Never
+        } else if wrap_atom == maintain() {
+            dprint_plugin_markdown::configuration::TextWrap::Maintain
+        } else {
+            return Err("Invalid text_wrap value".to_string());
+        }
+    };
+
+    let emphasis_kind = {
+        let kind_atom = map
+            .get(&emphasis_kind())
+            .ok_or("Missing emphasis_kind")?
+            .decode::<Atom>()
+            .map_err(|_| "Invalid emphasis_kind")?;
+
+        if kind_atom == asterisks() {
+            dprint_plugin_markdown::configuration::EmphasisKind::Asterisks
+        } else if kind_atom == underscores() {
+            dprint_plugin_markdown::configuration::EmphasisKind::Underscores
+        } else {
+            return Err("Invalid emphasis_kind value".to_string());
+        }
+    };
+
+    let strong_kind = {
+        let kind_atom = map
+            .get(&strong_kind())
+            .ok_or("Missing strong_kind")?
+            .decode::<Atom>()
+            .map_err(|_| "Invalid strong_kind")?;
+
+        if kind_atom == asterisks() {
+            dprint_plugin_markdown::configuration::StrongKind::Asterisks
+        } else if kind_atom == underscores() {
+            dprint_plugin_markdown::configuration::StrongKind::Underscores
+        } else {
+            return Err("Invalid strong_kind value".to_string());
+        }
+    };
+
+    let new_line_kind = {
+        let kind_atom = map
+            .get(&new_line_kind())
+            .ok_or("Missing new_line_kind")?
+            .decode::<Atom>()
+            .map_err(|_| "Invalid new_line_kind")?;
+
+        if kind_atom == auto() {
+            NewLineKind::Auto
+        } else if kind_atom == lf() {
+            NewLineKind::LineFeed
+        } else if kind_atom == crlf() {
+            NewLineKind::CarriageReturnLineFeed
+        } else {
+            return Err("Invalid new_line_kind value".to_string());
+        }
+    };
+
+    let unordered_list_kind = {
+        let kind_atom = map
+            .get(&unordered_list_kind())
+            .ok_or("Missing unordered_list_kind")?
+            .decode::<Atom>()
+            .map_err(|_| "Invalid unordered_list_kind")?;
+
+        if kind_atom == dashes() {
+            dprint_plugin_markdown::configuration::UnorderedListKind::Dashes
+        } else if kind_atom == asterisks() {
+            dprint_plugin_markdown::configuration::UnorderedListKind::Asterisks
+        } else {
+            return Err("Invalid unordered_list_kind value".to_string());
+        }
+    };
+
+    Ok(Configuration {
+        line_width,
+        text_wrap,
+        emphasis_kind,
+        strong_kind,
+        new_line_kind,
+        unordered_list_kind,
         ignore_directive: "dprint-ignore".to_string(),
         ignore_start_directive: "dprint-ignore-start".to_string(),
         ignore_end_directive: "dprint-ignore-end".to_string(),
         ignore_file_directive: "dprint-ignore-file".to_string(),
-    };
-
-    // Format the text using dprint-plugin-markdown
-    match format_text(&text, &config, |_, _, _| Ok(None)) {
-        Ok(Some(formatted)) => Ok(formatted),
-        Ok(None) => Ok(text), // No changes needed
-        Err(e) => Err(format!("Formatting error: {}", e)),
-    }
+    })
 }
 
 rustler::init!("Elixir.DprintMarkdownFormatter.Native");

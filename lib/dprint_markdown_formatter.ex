@@ -83,6 +83,12 @@ defmodule DprintMarkdownFormatter do
 
   @behaviour Mix.Tasks.Format
 
+  require Logger
+
+  alias DprintMarkdownFormatter.Config
+  alias DprintMarkdownFormatter.Error
+  alias DprintMarkdownFormatter.Validator
+
   @doc """
   Returns the features supported by this formatter plugin.
 
@@ -99,10 +105,10 @@ defmodule DprintMarkdownFormatter do
   end
 
   @doc """
-  Formats markdown text using dprint-plugin-markdown.
+  Mix.Tasks.Format implementation for backward compatibility.
 
-  Returns the formatted string directly, or returns original content if formatting
-  fails.
+  This is the actual function used by Mix formatter. It calls format_with_errors/2 internally
+  and returns the original content if formatting fails.
 
   ## Examples
 
@@ -118,31 +124,40 @@ defmodule DprintMarkdownFormatter do
       iex> DprintMarkdownFormatter.format("# Hello    World", line_width: 60)
       "# Hello World\\n"
 
-      iex> DprintMarkdownFormatter.format("* Item 1\\n* Item 2", unordered_list_kind: "asterisks")
+      iex> DprintMarkdownFormatter.format("* Item 1\\n* Item 2", unordered_list_kind: :asterisks)
       "* Item 1\\n* Item 2\\n"
   """
   @impl Mix.Tasks.Format
   @spec format(String.t(), keyword()) :: String.t()
   def format(contents, opts) when is_binary(contents) and is_list(opts) do
-    case determine_content_type(opts) do
-      :markdown ->
-        format_markdown(contents, opts)
-
-      :elixir_source ->
-        format_elixir_source(contents, opts)
-
-      :sigil ->
-        format_sigil(contents, opts)
+    case format_with_errors(contents, opts) do
+      {:ok, formatted} -> formatted
+      {:error, _error} -> contents
     end
-  rescue
-    _error ->
-      # If formatting fails, return original content unchanged
-      contents
+  end
+
+  @doc """
+  Formats markdown text with error details.
+
+  Returns `{:ok, formatted_content}` on success, or `{:error, error}` on failure.
+  This provides more detailed error information than the Mix.Tasks.Format version.
+  """
+  @spec format_with_errors(String.t(), keyword()) :: {:ok, String.t()} | {:error, Error.t()}
+  def format_with_errors(contents, opts) when is_binary(contents) and is_list(opts) do
+    with {:ok, validated_contents} <- Validator.validate_content(contents),
+         {:ok, validated_opts} <- Validator.validate_options(opts),
+         {:ok, content_type} <- determine_content_type(validated_opts),
+         {:ok, formatted} <- do_format(content_type, validated_contents, validated_opts) do
+      {:ok, formatted}
+    else
+      {:error, _error} = error_result ->
+        error_result
+    end
   end
 
   @doc """
   Returns the default list of module attributes that are formatted when
-  `doc_attributes: true`.
+  `format_module_attributes: true`.
 
   This list includes the most commonly used documentation attributes in Elixir
   projects.
@@ -157,171 +172,256 @@ defmodule DprintMarkdownFormatter do
   """
   @spec default_doc_attributes() :: [atom()]
   def default_doc_attributes do
-    [:moduledoc, :doc, :typedoc, :shortdoc, :deprecated]
+    Config.default_doc_attributes()
   end
 
   # Private helpers
 
   defp determine_content_type(opts) do
-    cond do
-      Keyword.has_key?(opts, :sigil) ->
-        :sigil
+    content_type =
+      cond do
+        Keyword.has_key?(opts, :sigil) ->
+          :sigil
 
-      Keyword.get(opts, :extension) in [".ex", ".exs"] ->
-        :elixir_source
+        Keyword.get(opts, :extension) in [".ex", ".exs"] ->
+          :elixir_source
 
-      Keyword.get(opts, :extension) in [".md", ".markdown"] ->
-        :markdown
+        Keyword.get(opts, :extension) in [".md", ".markdown"] ->
+          :markdown
 
-      true ->
-        :markdown
-    end
+        true ->
+          :markdown
+      end
+
+    {:ok, content_type}
   end
 
+  defp do_format(:markdown, contents, opts), do: format_markdown(contents, opts)
+  defp do_format(:elixir_source, contents, opts), do: format_elixir_source(contents, opts)
+  defp do_format(:sigil, contents, opts), do: format_sigil(contents, opts)
+
   defp format_markdown(contents, opts) do
-    config_opts = get_config_from_mix()
-
-    {runtime_dprint_opts, _format_opts} =
-      Keyword.split(opts, [
-        :line_width,
-        :text_wrap,
-        :emphasis_kind,
-        :strong_kind,
-        :new_line_kind,
-        :unordered_list_kind
-      ])
-
-    dprint_opts = Keyword.merge(config_opts, runtime_dprint_opts)
-
-    case DprintMarkdownFormatter.Native.format_markdown(contents, dprint_opts) do
-      {:ok, formatted} -> formatted
-      {:error, _reason} -> contents
+    with {:ok, config} <- get_config(),
+         {:ok, merged_config} <- merge_runtime_options(config, opts),
+         {:ok, formatted} <- call_nif(contents, merged_config) do
+      {:ok, formatted}
+    else
+      {:error, error} -> {:error, error}
     end
   end
 
   defp format_sigil(contents, opts) do
-    formatted = format_markdown(contents, opts)
-    # Remove trailing newline that dprint adds for consistency with sigil usage
-    String.trim_trailing(formatted, "\n")
+    case format_markdown(contents, opts) do
+      {:ok, formatted} ->
+        # Remove trailing newline that dprint adds for consistency with sigil usage
+        {:ok, String.trim_trailing(formatted, "\n")}
+
+      {:error, _error} = error_result ->
+        error_result
+    end
   end
 
   defp format_elixir_source(contents, opts) do
-    config = get_config_from_mix()
-    doc_attributes = get_doc_attributes(config)
-
-    # Extract dprint options
-    {runtime_dprint_opts, _format_opts} =
-      Keyword.split(opts, [
-        :line_width,
-        :text_wrap,
-        :emphasis_kind,
-        :strong_kind,
-        :new_line_kind,
-        :unordered_list_kind
-      ])
-
-    dprint_opts = Keyword.merge(config, runtime_dprint_opts)
-
-    case format_module_attributes(contents, doc_attributes, dprint_opts) do
-      {:ok, formatted_content} -> formatted_content
-      {:error, _reason} -> contents
+    with {:ok, config} <- get_config(),
+         {:ok, merged_config} <- merge_runtime_options(config, opts),
+         doc_attributes <- Config.resolve_module_attributes(merged_config),
+         {:ok, formatted_content} <-
+           format_module_attributes(contents, doc_attributes, merged_config) do
+      {:ok, formatted_content}
+    else
+      {:error, error} -> {:error, error}
     end
   end
 
-  defp get_config_from_mix do
-    case Mix.Project.config()[:dprint_markdown_formatter] do
-      nil -> []
-      config when is_list(config) -> config
-      _invalid -> []
+  defp get_config do
+    config = Config.load()
+    {:ok, config}
+  rescue
+    _error ->
+      default_config = Config.default()
+      {:ok, default_config}
+  end
+
+  defp merge_runtime_options(config, opts) do
+    case Validator.validate_config(config) do
+      {:ok, validated_config} ->
+        try do
+          {runtime_dprint_opts, _format_opts} =
+            Keyword.split(opts, [
+              :line_width,
+              :text_wrap,
+              :emphasis_kind,
+              :strong_kind,
+              :new_line_kind,
+              :unordered_list_kind
+            ])
+
+          merged_config = Config.merge(validated_config, runtime_dprint_opts)
+          Validator.validate_config(merged_config)
+        rescue
+          error ->
+            {:error, Error.config_error("Failed to merge runtime options", original_error: error)}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  defp format_module_attributes(content, doc_attributes, dprint_opts) do
+  defp call_nif(contents, config) do
+    nif_config = Config.to_nif_config(config)
+
+    case DprintMarkdownFormatter.Native.format_markdown(contents, nif_config) do
+      {:ok, formatted} ->
+        {:ok, formatted}
+
+      {:error, reason} ->
+        {:error, Error.nif_error("NIF formatting failed", original_error: reason)}
+    end
+  end
+
+  defp format_module_attributes(content, doc_attributes, config) do
+    with {:ok, ast} <- parse_elixir_source(content),
+         {:ok, patches} <- collect_patches_for_doc_attributes(ast, doc_attributes, config),
+         {:ok, patched_content} <- apply_patches(content, patches),
+         {:ok, formatted_content} <- apply_elixir_formatter(patched_content) do
+      {:ok, formatted_content}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp parse_elixir_source(content) do
     case Sourceror.parse_string(content) do
       {:ok, ast} ->
-        patches = collect_patches_for_doc_attributes(ast, doc_attributes, dprint_opts)
-        patched_content = Sourceror.patch_string(content, patches)
-        # Apply Elixir formatter to normalize indentation and structure
-        formatted_content =
-          try do
-            result =
-              patched_content
-              |> Code.format_string!()
-              |> IO.iodata_to_binary()
+        {:ok, ast}
 
-            # Ensure it ends with a newline
-            if String.ends_with?(result, "\n") do
-              result
-            else
-              result <> "\n"
-            end
-          rescue
-            _error -> patched_content
-          end
-
-        {:ok, formatted_content}
-
-      {:error, _error} ->
-        {:error, :parse_error}
+      {:error, error} ->
+        {:error, Error.parse_error("Failed to parse Elixir source", original_error: error)}
     end
-  rescue
-    error ->
-      {:error, error}
   end
 
-  defp collect_patches_for_doc_attributes(ast, doc_attributes, dprint_opts) do
+  defp apply_patches(content, patches) do
+    patched_content = Sourceror.patch_string(content, patches)
+    {:ok, patched_content}
+  rescue
+    error -> {:error, Error.format_error("Failed to apply patches", original_error: error)}
+  end
+
+  defp apply_elixir_formatter(content) do
+    result =
+      content
+      |> Code.format_string!()
+      |> IO.iodata_to_binary()
+
+    # Ensure it ends with a newline
+    formatted =
+      if String.ends_with?(result, "\n") do
+        result
+      else
+        result <> "\n"
+      end
+
+    {:ok, formatted}
+  rescue
+    error ->
+      {:error, Error.format_error("Failed to apply Elixir formatter", original_error: error)}
+  end
+
+  defp collect_patches_for_doc_attributes(ast, doc_attributes, config) do
     {_updated_ast, patches} =
       Macro.postwalk(ast, [], fn node, acc ->
-        case node do
-          # Handle both heredoc and simple string patterns: @moduledoc """content""" or @moduledoc "content"
-          {:@, _meta,
-           [{attr, _attr_meta, [{:__block__, block_meta, [doc_content]} = string_node]}]}
-          when is_atom(attr) and is_binary(doc_content) ->
-            if attr in doc_attributes do
-              case format_markdown_content(doc_content, dprint_opts) do
-                formatted when formatted != doc_content ->
-                  # Get the range of just the string content, not the entire @moduledoc
-                  range = Sourceror.get_range(string_node)
-                  # Determine original format and preserve it
-                  delimiter = block_meta[:delimiter] || "\"\"\""
-
-                  replacement =
-                    if delimiter == "\"" do
-                      # Simple string format - keep as simple string if single line
-                      if String.contains?(formatted, "\n") do
-                        # Convert to heredoc if content becomes multi-line
-                        indented_content = indent_content_for_heredoc(formatted)
-                        "\"\"\"\n#{indented_content}\n  \"\"\""
-                      else
-                        # Keep as simple string
-                        "\"#{formatted}\""
-                      end
-                    else
-                      # Heredoc format - preserve as heredoc
-                      indented_content = indent_content_for_heredoc(formatted)
-                      "\"\"\"\n#{indented_content}\n  \"\"\""
-                    end
-
-                  patch = %Sourceror.Patch{
-                    range: range,
-                    change: replacement
-                  }
-
-                  {node, [patch | acc]}
-
-                _unchanged ->
-                  {node, acc}
-              end
-            else
-              {node, acc}
-            end
-
-          _other_node ->
-            {node, acc}
-        end
+        process_node_for_patches(node, doc_attributes, config, acc)
       end)
 
-    patches
+    {:ok, patches}
+  rescue
+    error -> {:error, Error.format_error("Failed to collect patches", original_error: error)}
+  end
+
+  defp process_node_for_patches(node, doc_attributes, config, acc) do
+    case node do
+      # Handle both heredoc and simple string patterns: @moduledoc """content""" or @moduledoc "content"
+      {:@, _meta, [{attr, _attr_meta, [{:__block__, block_meta, [doc_content]} = string_node]}]}
+      when is_atom(attr) and is_binary(doc_content) ->
+        process_doc_attribute(
+          node,
+          attr,
+          doc_content,
+          string_node,
+          block_meta,
+          doc_attributes,
+          config,
+          acc
+        )
+
+      _other_node ->
+        {node, acc}
+    end
+  end
+
+  defp process_doc_attribute(
+         node,
+         attr,
+         doc_content,
+         string_node,
+         block_meta,
+         doc_attributes,
+         config,
+         acc
+       ) do
+    if attr in doc_attributes do
+      case format_markdown_content(doc_content, config) do
+        {:ok, formatted} when formatted != doc_content ->
+          create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc)
+
+        {:ok, _unchanged} ->
+          {node, acc}
+
+        {:error, _error} ->
+          {node, acc}
+      end
+    else
+      {node, acc}
+    end
+  end
+
+  defp create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc) do
+    range = Sourceror.get_range(string_node)
+    delimiter = block_meta[:delimiter] || "\"\"\""
+    replacement = build_replacement_string(formatted, delimiter)
+
+    patch = %Sourceror.Patch{
+      range: range,
+      change: replacement
+    }
+
+    {node, [patch | acc]}
+  end
+
+  defp build_replacement_string(formatted, delimiter) do
+    if delimiter == "\"" do
+      build_simple_string_replacement(formatted)
+    else
+      build_heredoc_replacement(formatted)
+    end
+  end
+
+  defp build_simple_string_replacement(formatted) do
+    if String.contains?(formatted, "\n") do
+      # Convert to heredoc if content becomes multi-line
+      indented_content = indent_content_for_heredoc(formatted)
+      "\"\"\"\n#{indented_content}\n  \"\"\""
+    else
+      # Keep as simple string
+      "\"#{formatted}\""
+    end
+  end
+
+  defp build_heredoc_replacement(formatted) do
+    # Heredoc format - preserve as heredoc
+    indented_content = indent_content_for_heredoc(formatted)
+    "\"\"\"\n#{indented_content}\n  \"\"\""
   end
 
   defp indent_content_for_heredoc(content) do
@@ -338,39 +438,17 @@ defmodule DprintMarkdownFormatter do
     end)
   end
 
-  defp format_markdown_content(content, dprint_opts) do
-    case DprintMarkdownFormatter.Native.format_markdown(content, dprint_opts) do
+  defp format_markdown_content(content, config) do
+    nif_config = Config.to_nif_config(config)
+
+    case DprintMarkdownFormatter.Native.format_markdown(content, nif_config) do
       {:ok, formatted} ->
         # For heredocs, remove the trailing newline that dprint adds
         # The heredoc structure will handle proper formatting
-        String.trim_trailing(formatted, "\n")
+        {:ok, String.trim_trailing(formatted, "\n")}
 
-      {:error, _reason} ->
-        content
-    end
-  end
-
-  defp get_doc_attributes(config) do
-    default_common_attributes = default_doc_attributes()
-
-    case Keyword.get(config, :format_module_attributes) do
-      # nil means disabled - no formatting
-      nil ->
-        []
-
-      true ->
-        default_common_attributes
-
-      false ->
-        []
-
-      attrs when is_list(attrs) ->
-        # List of atoms: [:moduledoc, :doc, :custom_doc]
-        attrs
-
-      # Invalid config disables formatting
-      _invalid ->
-        []
+      {:error, reason} ->
+        {:error, Error.nif_error("Failed to format markdown content", original_error: reason)}
     end
   end
 end

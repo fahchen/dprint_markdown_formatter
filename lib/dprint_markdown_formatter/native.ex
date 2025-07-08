@@ -27,20 +27,20 @@ defmodule DprintMarkdownFormatter.Native do
     ),
     target_dir: Path.join(:code.priv_dir(:dprint_markdown_formatter), "native/target")
 
-  @type text_wrap_option :: :always | :never | :maintain
-  @type emphasis_kind_option :: :asterisks | :underscores
-  @type strong_kind_option :: :asterisks | :underscores
-  @type new_line_kind_option :: :auto | :lf | :crlf
-  @type unordered_list_kind_option :: :dashes | :asterisks
+  @type text_wrap_option() :: :always | :never | :maintain
+  @type emphasis_kind_option() :: :asterisks | :underscores
+  @type strong_kind_option() :: :asterisks | :underscores
+  @type new_line_kind_option() :: :auto | :lf | :crlf
+  @type unordered_list_kind_option() :: :dashes | :asterisks
 
-  @type format_options :: [
+  @type format_options() :: %{
           line_width: pos_integer(),
-          text_wrap: text_wrap_option,
-          emphasis_kind: emphasis_kind_option,
-          strong_kind: strong_kind_option,
-          new_line_kind: new_line_kind_option,
-          unordered_list_kind: unordered_list_kind_option
-        ]
+          text_wrap: text_wrap_option(),
+          emphasis_kind: emphasis_kind_option(),
+          strong_kind: strong_kind_option(),
+          new_line_kind: new_line_kind_option(),
+          unordered_list_kind: unordered_list_kind_option()
+        }
 
   @doc """
   Formats markdown text with configurable options.
@@ -48,6 +48,6 @@ defmodule DprintMarkdownFormatter.Native do
   This function is implemented in Rust and provides the core formatting
   functionality.
   """
-  @spec format_markdown(String.t(), format_options) :: {:ok, String.t()} | {:error, String.t()}
+  @spec format_markdown(String.t(), format_options()) :: {:ok, String.t()} | {:error, String.t()}
   def format_markdown(_text, _options), do: :erlang.nif_error(:nif_not_loaded)
 end
