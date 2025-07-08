@@ -9,7 +9,7 @@ defmodule DprintMarkdownFormatter.Validator do
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
 
-  @type validation_result(t) :: {:ok, t} | {:error, Error.validation_error()}
+  @type validation_result(t) :: {:ok, t} | {:error, Error.ValidationError.t()}
 
   @doc """
   Validates content input for formatting.

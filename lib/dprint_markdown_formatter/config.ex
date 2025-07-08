@@ -3,6 +3,7 @@ defmodule DprintMarkdownFormatter.Config do
   Configuration management for DprintMarkdownFormatter with proper type safety and
   validation.
   """
+  use TypedStructor
 
   @type text_wrap_option() :: :always | :never | :maintain
   @type emphasis_kind_option() :: :asterisks | :underscores
@@ -11,23 +12,15 @@ defmodule DprintMarkdownFormatter.Config do
   @type unordered_list_kind_option() :: :dashes | :asterisks
   @type module_attributes_option() :: nil | boolean() | [atom()]
 
-  @type t() :: %__MODULE__{
-          line_width: pos_integer(),
-          text_wrap: text_wrap_option(),
-          emphasis_kind: emphasis_kind_option(),
-          strong_kind: strong_kind_option(),
-          new_line_kind: new_line_kind_option(),
-          unordered_list_kind: unordered_list_kind_option(),
-          format_module_attributes: module_attributes_option()
-        }
-
-  defstruct line_width: 80,
-            text_wrap: :always,
-            emphasis_kind: :asterisks,
-            strong_kind: :asterisks,
-            new_line_kind: :auto,
-            unordered_list_kind: :dashes,
-            format_module_attributes: nil
+  typed_structor enforce: true do
+    field :line_width, pos_integer(), default: 80
+    field :text_wrap, text_wrap_option(), default: :always
+    field :emphasis_kind, emphasis_kind_option(), default: :asterisks
+    field :strong_kind, strong_kind_option(), default: :asterisks
+    field :new_line_kind, new_line_kind_option(), default: :auto
+    field :unordered_list_kind, unordered_list_kind_option(), default: :dashes
+    field :format_module_attributes, module_attributes_option(), default: nil
+  end
 
   @doc """
   Returns the default configuration.
