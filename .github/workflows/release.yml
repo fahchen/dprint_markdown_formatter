@@ -19,76 +19,81 @@ jobs:
           # Linux
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
+            nif_version: "2.15"
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-20.04
+            nif_version: "2.16"
           - target: x86_64-unknown-linux-musl
             os: ubuntu-20.04
+            nif_version: "2.15"
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-20.04
+            nif_version: "2.16"
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-20.04
+            nif_version: "2.15"
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-20.04
+            nif_version: "2.16"
           - target: aarch64-unknown-linux-musl
             os: ubuntu-20.04
+            nif_version: "2.15"
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-20.04
+            nif_version: "2.16"
 
           # macOS
           - target: x86_64-apple-darwin
             os: macos-13
+            nif_version: "2.15"
+          - target: x86_64-apple-darwin
+            os: macos-13
+            nif_version: "2.16"
           - target: aarch64-apple-darwin
             os: macos-14
+            nif_version: "2.15"
+          - target: aarch64-apple-darwin
+            os: macos-14
+            nif_version: "2.16"
 
           # Windows
           - target: x86_64-pc-windows-msvc
             os: windows-2022
-          - target: x86_64-pc-windows-gnu
+            nif_version: "2.15"
+          - target: x86_64-pc-windows-msvc
             os: windows-2022
+            nif_version: "2.16"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Setup Linux cross-compilation
-        if: contains(matrix.target, 'linux')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-multilib
-          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
-            sudo apt-get install -y musl-tools musl-dev
-          fi
-          if [[ "${{ matrix.target }}" == "aarch64"* ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          fi
-
-      - name: Build NIF
-        working-directory: native/dprint_markdown_formatter_nif
-        env:
-          CARGO_BUILD_TARGET: ${{ matrix.target }}
-          RUSTFLAGS: ${{ contains(matrix.target, 'musl') && '-C target-feature=+crt-static' || '' }}
-        run: |
-          if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
-            export CC=aarch64-linux-gnu-gcc
-          fi
-          cargo build --release --target ${{ matrix.target }}
-
-      - name: Prepare artifact
+      - name: Extract project version
         shell: bash
         run: |
-          mkdir -p artifacts
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp native/dprint_markdown_formatter_nif/target/${{ matrix.target }}/release/dprint_markdown_formatter_nif.dll artifacts/
-          else
-            cp native/dprint_markdown_formatter_nif/target/${{ matrix.target }}/release/libdprint_markdown_formatter_nif.so artifacts/
-          fi
+          VERSION=$(grep -o 'version: "[^"]*"' mix.exs | head -1 | sed 's/version: "\(.*\)"/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build NIF
+        uses: philss/rustler-precompiled-action@v1.1.4
+        with:
+          target: ${{ matrix.target }}
+          nif-version: ${{ matrix.nif_version }}
+          project-name: dprint_markdown_formatter
+          project-version: ${{ env.VERSION }}
+          cross-compile: ${{ contains(matrix.target, 'linux') && contains(matrix.target, 'aarch64') }}
+          cargo-args: --release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nif-${{ matrix.target }}
-          path: artifacts/
+          name: nif-${{ matrix.target }}-${{ matrix.nif_version }}
+          path: priv/native/
 
   release:
     name: Create Release
     needs: build_nif
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
 
@@ -101,19 +106,16 @@ jobs:
         run: |
           mkdir -p release_assets
           for dir in artifacts/nif-*; do
-            target=$(basename "$dir" | sed 's/nif-//')
-            if [[ -f "$dir/dprint_markdown_formatter_nif.dll" ]]; then
-              cp "$dir/dprint_markdown_formatter_nif.dll" "release_assets/libdprint_markdown_formatter_nif-$target.dll"
-            else
-              cp "$dir/libdprint_markdown_formatter_nif.so" "release_assets/libdprint_markdown_formatter_nif-$target.so"
-            fi
+            cp -r "$dir"/* release_assets/
           done
 
       - name: Generate checksums
         working-directory: release_assets
         run: |
           for file in *; do
-            sha256sum "$file" >> checksums.txt
+            if [[ -f "$file" ]]; then
+              sha256sum "$file" >> checksums.txt
+            fi
           done
 
       - name: Create Release
