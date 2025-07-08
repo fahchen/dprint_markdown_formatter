@@ -1,130 +1,90 @@
-name: Release
+name: Build precompiled NIFs
+
+env:
+  NIF_NAME: dprint_markdown_formatter_nif
+  NIF_DIRECTORY: native/dprint_markdown_formatter_nif
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - "native/**"
+      - ".github/workflows/release.yml"
     tags:
-      - "v*"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+      - "*"
 
 jobs:
-  build_nif:
-    name: Build NIF ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
+  build_release:
+    name: NIF ${{ matrix.nif }} - ${{ matrix.job.target }} (${{ matrix.job.os }})
+    runs-on: ${{ matrix.job.os }}
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          # Linux
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-20.04
-            nif_version: "2.15"
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-20.04
-            nif_version: "2.16"
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-20.04
-            nif_version: "2.15"
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-20.04
-            nif_version: "2.16"
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-20.04
-            nif_version: "2.15"
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-20.04
-            nif_version: "2.16"
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-20.04
-            nif_version: "2.15"
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-20.04
-            nif_version: "2.16"
-
-          # macOS
-          - target: x86_64-apple-darwin
-            os: macos-13
-            nif_version: "2.15"
-          - target: x86_64-apple-darwin
-            os: macos-13
-            nif_version: "2.16"
-          - target: aarch64-apple-darwin
-            os: macos-14
-            nif_version: "2.15"
-          - target: aarch64-apple-darwin
-            os: macos-14
-            nif_version: "2.16"
-
-          # Windows
-          - target: x86_64-pc-windows-msvc
-            os: windows-2022
-            nif_version: "2.15"
-          - target: x86_64-pc-windows-msvc
-            os: windows-2022
-            nif_version: "2.16"
+        nif: ["2.15", "2.16"]
+        job:
+          - { target: aarch64-apple-darwin, os: macos-12 }
+          - {
+              target: aarch64-unknown-linux-gnu,
+              os: ubuntu-20.04,
+              use-cross: true,
+            }
+          - {
+              target: aarch64-unknown-linux-musl,
+              os: ubuntu-20.04,
+              use-cross: true,
+            }
+          - {
+              target: riscv64gc-unknown-linux-gnu,
+              os: ubuntu-20.04,
+              use-cross: true,
+            }
+          - { target: x86_64-apple-darwin, os: macos-12 }
+          - { target: x86_64-pc-windows-gnu, os: windows-2019 }
+          - { target: x86_64-pc-windows-msvc, os: windows-2019 }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04 }
+          - {
+              target: x86_64-unknown-linux-musl,
+              os: ubuntu-20.04,
+              use-cross: true,
+            }
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
       - name: Extract project version
         shell: bash
         run: |
-          VERSION=$(grep -o 'version: "[^"]*"' mix.exs | head -1 | sed 's/version: "\(.*\)"/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          version=$(grep -o '"[0-9][^"]*"' mix.exs | head -n1 | tr -d '"')
+          echo "PROJECT_VERSION=$version" >> $GITHUB_ENV
 
-      - name: Build NIF
-        uses: philss/rustler-precompiled-action@v1.1.4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          target: ${{ matrix.target }}
-          nif-version: ${{ matrix.nif_version }}
-          project-name: dprint_markdown_formatter
-          project-version: ${{ env.VERSION }}
-          cross-compile: ${{ contains(matrix.target, 'linux') && contains(matrix.target, 'aarch64') }}
-          cargo-args: --release
+          toolchain: stable
+          target: ${{ matrix.job.target }}
 
-      - name: Upload artifact
+      - name: Build the project
+        id: build-crate
+        uses: philss/rustler_precompiled@v1
+        with:
+          project-name: dprint_markdown_formatter
+          project-version: ${{ env.PROJECT_VERSION }}
+          target: ${{ matrix.job.target }}
+          nif-version: ${{ matrix.nif }}
+          use-cross: ${{ matrix.job.use-cross }}
+          project-dir: ${{ env.NIF_DIRECTORY }}
+
+      - name: Artifact upload
         uses: actions/upload-artifact@v4
         with:
-          name: nif-${{ matrix.target }}-${{ matrix.nif_version }}
-          path: priv/native/
+          name: ${{ steps.build-crate.outputs.file-name }}
+          path: ${{ steps.build-crate.outputs.file-path }}
 
-  release:
-    name: Create Release
-    needs: build_nif
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
-
-      - name: Prepare release assets
-        run: |
-          mkdir -p release_assets
-          for dir in artifacts/nif-*; do
-            cp -r "$dir"/* release_assets/
-          done
-
-      - name: Generate checksums
-        working-directory: release_assets
-        run: |
-          for file in *; do
-            if [[ -f "$file" ]]; then
-              sha256sum "$file" >> checksums.txt
-            fi
-          done
-
-      - name: Create Release
+      - name: Publish archives and packages
         uses: softprops/action-gh-release@v2
         with:
-          files: release_assets/*
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          files: |
+            ${{ steps.build-crate.outputs.file-path }}
+        if: startsWith(github.ref, 'refs/tags/')
