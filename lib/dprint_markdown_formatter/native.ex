@@ -8,7 +8,7 @@ defmodule DprintMarkdownFormatter.Native do
 
   use RustlerPrecompiled,
     otp_app: :dprint_markdown_formatter,
-    crate: "dprint_markdown_formatter_nif",
+    crate: "dprint_markdown_formatter",
     base_url: "https://github.com/fahchen/dprint_markdown_formatter/releases/download",
     force_build:
       System.get_env("RUSTLER_PRECOMPILED_FORCE_BUILD") in ["1", "true"] or
