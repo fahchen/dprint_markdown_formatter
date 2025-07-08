@@ -84,10 +84,10 @@ defmodule DprintMarkdownFormatterTest do
       assert result == "- Item 1\n  - Nested item\n- Item 2\n"
     end
 
+    # This test demonstrates a limitation in dprint-plugin-markdown
+    # When converting asterisk lists to dashes, nested indentation is lost
     @tag :skip
     test "handles complex mixed content - KNOWN ISSUE: asterisk nested lists lose indentation" do
-      # This test demonstrates a limitation in dprint-plugin-markdown
-      # When converting asterisk lists to dashes, nested indentation is lost
       input = """
       #   Title
 
@@ -222,7 +222,7 @@ defmodule DprintMarkdownFormatterTest do
 
     test "unordered_list_kind option changes list markers" do
       input = "- Item 1\n- Item 2"
-      result_asterisks = DprintMarkdownFormatter.format(input, unordered_list_kind: "asterisks")
+      result_asterisks = DprintMarkdownFormatter.format(input, unordered_list_kind: :asterisks)
 
       expected = "* Item 1\n* Item 2\n"
       assert result_asterisks == expected
@@ -230,7 +230,7 @@ defmodule DprintMarkdownFormatterTest do
 
     test "emphasis_kind option changes emphasis style" do
       input = "*italic text*"
-      result_underscores = DprintMarkdownFormatter.format(input, emphasis_kind: "underscores")
+      result_underscores = DprintMarkdownFormatter.format(input, emphasis_kind: :underscores)
 
       expected = "_italic text_\n"
       assert result_underscores == expected
@@ -241,7 +241,7 @@ defmodule DprintMarkdownFormatterTest do
         "This is a very long line of text that normally would be wrapped but with never option should stay on one line."
 
       result_default = DprintMarkdownFormatter.format(input, line_width: 20)
-      result_never = DprintMarkdownFormatter.format(input, text_wrap: "never", line_width: 20)
+      result_never = DprintMarkdownFormatter.format(input, text_wrap: :never, line_width: 20)
 
       # With text_wrap: "never", should keep text on one line
       expected_never =
@@ -256,8 +256,16 @@ defmodule DprintMarkdownFormatterTest do
     test "native function can be called directly with options" do
       input = "- Item 1\n- Item 2"
 
-      result =
-        DprintMarkdownFormatter.Native.format_markdown(input, unordered_list_kind: "asterisks")
+      nif_config = %{
+        line_width: 80,
+        text_wrap: :always,
+        emphasis_kind: :asterisks,
+        strong_kind: :asterisks,
+        new_line_kind: :auto,
+        unordered_list_kind: :asterisks
+      }
+
+      result = DprintMarkdownFormatter.Native.format_markdown(input, nif_config)
 
       assert {:ok, formatted} = result
       expected = "* Item 1\n* Item 2\n"
@@ -292,13 +300,6 @@ defmodule DprintMarkdownFormatterTest do
       result = DprintMarkdownFormatter.format(input, extension: ".md")
       expected = "# Header with spaces\n"
       assert result == expected
-    end
-
-    @tag :skip
-    test "format/2 returns original content on formatting error" do
-      # Note: Skipped due to NIF mocking limitations with Mimic
-      # This functionality is tested indirectly through error handling paths
-      :skipped
     end
 
     test "format/2 with empty options formats correctly" do
@@ -669,7 +670,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock Mix.Project.config to return custom format_module_attributes configuration
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduledoc]
@@ -704,7 +705,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to only format @moduledoc
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduledoc]
@@ -761,7 +762,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable @moduletag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag]
@@ -791,7 +792,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable @moduletag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag]
@@ -833,7 +834,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable @tag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:tag]
@@ -869,7 +870,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable @tag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:tag]
@@ -899,7 +900,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable @describetag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:describetag]
@@ -951,7 +952,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable only @moduletag formatting
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag]
@@ -980,7 +981,7 @@ defmodule DprintMarkdownFormatterTest do
       expected = input
 
       # Mock configuration to enable testing attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag, :tag, :describetag]
@@ -1007,7 +1008,7 @@ defmodule DprintMarkdownFormatterTest do
       expected = input
 
       # Mock configuration to enable testing attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag, :tag, :describetag]
@@ -1041,7 +1042,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable testing attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag, :tag, :describetag]
@@ -1079,7 +1080,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration to enable testing attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduletag, :tag, :describetag]
@@ -1093,6 +1094,40 @@ defmodule DprintMarkdownFormatterTest do
   end
 
   describe "flexible format_module_attributes configuration" do
+    test "logs warning for invalid configuration and uses default" do
+      import ExUnit.CaptureLog
+
+      input = ~S'''
+      defmodule Example do
+        @moduledoc """
+        This is   module   documentation.
+        """
+      end
+      '''
+
+      # Mock configuration with invalid format_module_attributes
+      stub(Mix.Project, :config, fn ->
+        [
+          dprint_markdown_formatter: [
+            format_module_attributes: "invalid"
+          ]
+        ]
+      end)
+
+      # Capture the warning log and suppress it from output
+      log =
+        capture_log([level: :warning], fn ->
+          result = DprintMarkdownFormatter.format(input, extension: ".ex")
+          # Content should remain unchanged since invalid config disables formatting
+          assert result == input
+        end)
+
+      # Assert that the warning was logged
+      assert log =~ "Invalid configuration for format_module_attributes"
+      assert log =~ "must be nil, boolean, or list of atoms"
+      assert log =~ "Using default value"
+    end
+
     test "boolean true formats default common attributes" do
       input = ~S'''
       defmodule Example do
@@ -1127,7 +1162,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with boolean true
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: true
@@ -1155,7 +1190,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with boolean false
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: false
@@ -1208,7 +1243,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with simple list (only specific attributes)
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: [:moduledoc, :custom_doc, :note, :example]
@@ -1232,7 +1267,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with empty list
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: []
@@ -1257,7 +1292,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with nil format_module_attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             line_width: 80
@@ -1272,6 +1307,8 @@ defmodule DprintMarkdownFormatterTest do
     end
 
     test "invalid configuration disables formatting" do
+      import ExUnit.CaptureLog
+
       input = ~S'''
       defmodule Example do
         @moduledoc """
@@ -1281,7 +1318,7 @@ defmodule DprintMarkdownFormatterTest do
       '''
 
       # Mock configuration with invalid format_module_attributes
-      expect(Mix.Project, :config, fn ->
+      stub(Mix.Project, :config, fn ->
         [
           dprint_markdown_formatter: [
             format_module_attributes: "invalid"
@@ -1290,8 +1327,10 @@ defmodule DprintMarkdownFormatterTest do
       end)
 
       # Content should remain unchanged since invalid config disables formatting
-      result = DprintMarkdownFormatter.format(input, extension: ".ex")
-      assert result == input
+      capture_log([level: :warning], fn ->
+        result = DprintMarkdownFormatter.format(input, extension: ".ex")
+        assert result == input
+      end)
     end
   end
 end
