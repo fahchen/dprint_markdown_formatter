@@ -1,6 +1,7 @@
 # Used by "mix format"
 [
   plugins: [DprintMarkdownFormatter],
+  import_deps: [:typed_structor],
   inputs: [
     "{mix,.formatter}.exs",
     "{config,lib}/**/*.{ex,exs}",

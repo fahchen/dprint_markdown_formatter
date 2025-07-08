@@ -31,6 +31,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       {:rustler, "~> 0.36.0"},
       {:rustler_precompiled, "~> 0.8"},
       {:sourceror, "~> 1.0"},
+      {:typed_structor, "~> 0.5.0"},
       {:mimic, "~> 1.7", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
