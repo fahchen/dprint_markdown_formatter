@@ -71,20 +71,20 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            native/dprint_markdown_formatter_nif/target
+            native/dprint_markdown_formatter/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         run: mix format --check-formatted
 
       - name: Check Rust formatting
-        run: cd native/dprint_markdown_formatter_nif && cargo fmt --check
+        run: cd native/dprint_markdown_formatter && cargo fmt --check
 
       - name: Check warnings
         run: mix compile --warnings-as-errors
 
       - name: Run Rust clippy
-        run: cd native/dprint_markdown_formatter_nif && cargo clippy -- -D warnings
+        run: cd native/dprint_markdown_formatter && cargo clippy -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -118,7 +118,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            native/dprint_markdown_formatter_nif/target
+            native/dprint_markdown_formatter/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run tests
@@ -229,7 +229,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            native/dprint_markdown_formatter_nif/target
+            native/dprint_markdown_formatter/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Compile

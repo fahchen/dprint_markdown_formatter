@@ -1,8 +1,8 @@
 name: Build precompiled NIFs
 
 env:
-  NIF_NAME: dprint_markdown_formatter_nif
-  NIF_DIRECTORY: native/dprint_markdown_formatter_nif
+  NIF_NAME: dprint_markdown_formatter
+  NIF_DIRECTORY: native/dprint_markdown_formatter
 
 on:
   push:
