@@ -13,5 +13,5 @@ dprint-plugin-markdown = "0.18.0"
 dprint-core = "0.67.4"
 
 [features]
-default = ["nif_version_2_15"]
-nif_version_2_15 = ["rustler/nif_version_2_15"]
+default = ["nif_version_2_16"]
+nif_version_2_16 = ["rustler/nif_version_2_16"]
