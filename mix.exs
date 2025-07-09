@@ -10,6 +10,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       deps: deps(),
       aliases: aliases(),
       dialyzer: [plt_add_apps: [:mix]],
+      package: package(),
       dprint_markdown_formatter: [
         line_width: 80,
         text_wrap: "always"
@@ -27,14 +28,24 @@ defmodule DprintMarkdownFormatter.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # TODO: mark it as optional
-      {:rustler, "~> 0.36.0"},
       {:rustler_precompiled, "~> 0.8"},
+      {:rustler, "~> 0.36.0", optional: true},
       {:sourceror, "~> 1.0"},
       {:typed_structor, "~> 0.5.0"},
       {:mimic, "~> 1.7", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      files: [
+        "lib",
+        "native",
+        "checksum-*.exs",
+        "mix.exs"
+      ]
     ]
   end
 
