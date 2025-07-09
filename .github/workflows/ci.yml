@@ -13,177 +13,75 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup:
+  build:
+    name: Build & Format Check
     runs-on: ubuntu-latest
     outputs:
-      otp-version: ${{ steps.setup-beam.outputs.otp-version }}
-      elixir-version: ${{ steps.setup-beam.outputs.elixir-version }}
+      otp-version: ${{ steps.setup-env.outputs.otp-version }}
+      elixir-version: ${{ steps.setup-env.outputs.elixir-version }}
     steps:
       - uses: actions/checkout@v4
 
-      - id: setup-beam
-        uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
+      - id: setup-env
+        uses: ./.github/actions/setup-elixir-rust
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-  build:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Cache Rust Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            native/dprint_markdown_formatter/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check formatting
+      - name: Check Elixir formatting
         run: mix format --check-formatted
 
       - name: Check Rust formatting
         run: cd native/dprint_markdown_formatter && cargo fmt --check
 
-      - name: Check warnings
+      - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
 
       - name: Run Rust clippy
         run: cd native/dprint_markdown_formatter && cargo clippy -- -D warnings
 
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
-    needs: setup
+    needs: build
     steps:
       - uses: actions/checkout@v4
 
-      - uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Cache Rust Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            native/dprint_markdown_formatter/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: ./.github/actions/setup-elixir-rust
 
       - name: Run tests
         run: mix test
 
-  credo:
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
-    needs: setup
+    needs: build
+    strategy:
+      matrix:
+        check: [credo, dialyzer]
     steps:
       - uses: actions/checkout@v4
 
-      - uses: erlef/setup-beam@v1
+      - uses: ./.github/actions/setup-elixir-rust
         with:
-          version-file: .tool-versions
-          version-type: strict
+          cache-key-suffix: -${{ matrix.check }}
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-      - name: Run Credo
-        run: mix credo --strict
-
-  dialyzer:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: erlef/setup-beam@v1
-        with:
-          version-file: .tool-versions
-          version-type: strict
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-      - uses: actions/cache@v4
+      - name: Cache Dialyzer PLTs
+        if: matrix.check == 'dialyzer'
+        uses: actions/cache@v4
         with:
           path: priv/plts
-          key: ${{ runner.os }}-plt-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-plt-${{ needs.build.outputs.otp-version }}-${{ needs.build.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-plt-${{ needs.setup.outputs.otp-version }}-${{ needs.setup.outputs.elixir-version }}
+            ${{ runner.os }}-plt-${{ needs.build.outputs.otp-version }}-${{ needs.build.outputs.elixir-version }}
+
+      - name: Run Credo
+        if: matrix.check == 'credo'
+        run: mix credo --strict
 
       - name: Run Dialyzer
+        if: matrix.check == 'dialyzer'
         run: mix dialyzer --format github
 
   matrix-test:
+    name: Test Matrix (Elixir ${{ matrix.elixir }}, OTP ${{ matrix.otp }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -203,41 +101,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: erlef/setup-beam@v1
+      - uses: ./.github/actions/setup-elixir-rust
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            deps
-          key: mix-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            mix-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}
-
-      - name: Install Dependencies
-        run: mix deps.get
-
-      - name: Setup Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Cache Rust Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            native/dprint_markdown_formatter/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          cache-key-suffix: -${{ matrix.otp }}-${{ matrix.elixir }}
 
       - name: Compile
         run: mix compile
 
       - name: Compile with warnings as errors
         if: ${{ matrix.warnings_as_errors == true }}
-        run: mix compile --warnings-as-errors
+        run: mix compile --warnings-as-errors --force
 
       - name: Run tests
         run: mix test

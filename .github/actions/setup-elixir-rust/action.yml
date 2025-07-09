@@ -1,0 +1,76 @@
+name: "Setup Elixir and Rust Environment"
+description: "Sets up Elixir/OTP and Rust with comprehensive caching"
+
+inputs:
+  cache-key-suffix:
+    description: "Optional suffix for cache keys (useful for matrix jobs)"
+    required: false
+    default: ""
+  skip-rust:
+    description: "Skip Rust setup (default: false)"
+    required: false
+    default: "false"
+  elixir-version:
+    description: "Explicit Elixir version (overrides .tool-versions)"
+    required: false
+    default: ""
+  otp-version:
+    description: "Explicit OTP version (overrides .tool-versions)"
+    required: false
+    default: ""
+
+outputs:
+  otp-version:
+    description: "OTP version from setup-beam"
+    value: ${{ steps.setup-beam.outputs.otp-version }}
+  elixir-version:
+    description: "Elixir version from setup-beam"
+    value: ${{ steps.setup-beam.outputs.elixir-version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Elixir/OTP
+      id: setup-beam
+      uses: erlef/setup-beam@v1
+      with:
+        version-file: ${{ inputs.elixir-version == '' && '.tool-versions' || '' }}
+        version-type: ${{ inputs.elixir-version == '' && 'strict' || '' }}
+        elixir-version: ${{ inputs.elixir-version }}
+        otp-version: ${{ inputs.otp-version }}
+      shell: bash
+
+    - name: Cache Elixir Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          _build
+          deps
+          priv
+        key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock', 'native/dprint_markdown_formatter/Cargo.lock') }}${{ inputs.cache-key-suffix }}
+        restore-keys: |
+          mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}${{ inputs.cache-key-suffix }}
+      shell: bash
+
+    - name: Install Dependencies
+      run: mix deps.get
+      shell: bash
+
+    - name: Setup Rust
+      if: inputs.skip-rust != 'true'
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      shell: bash
+
+    - name: Cache Rust Dependencies
+      if: inputs.skip-rust != 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          native/dprint_markdown_formatter/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('native/dprint_markdown_formatter/Cargo.lock') }}${{ inputs.cache-key-suffix }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ inputs.cache-key-suffix }}
+      shell: bash
+
