@@ -42,7 +42,7 @@ defmodule DprintMarkdownFormatter.MixProject do
     [
       check: [
         "cmd --cd native/dprint_markdown_formatter cargo fmt",
-        "cmd --cd native/dprint_markdown_formatter cargo clippy",
+        "cmd --cd native/dprint_markdown_formatter cargo clippy -- -D warnings",
         "format",
         "credo",
         "dialyzer"
