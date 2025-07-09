@@ -28,7 +28,8 @@ jobs:
         nif: ["2.16"]
         job:
           - { target: x86_64-apple-darwin, os: macos-13 }
-          - { target: aarch64-apple-darwin, os: macos-13, use-cross: true }
+          # Use native Apple Silicon runner for aarch64-apple-darwin to avoid cross-compilation issues
+          - { target: aarch64-apple-darwin, os: macos-14 }
           - {
               target: aarch64-unknown-linux-gnu,
               os: ubuntu-22.04,
