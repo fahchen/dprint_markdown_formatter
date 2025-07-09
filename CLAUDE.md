@@ -18,7 +18,7 @@ code in this repository.
 
 ### Rust Development
 
-- `cd native/dprint_markdown_formatter_nif` - Navigate to Rust NIF directory
+- `cd native/dprint_markdown_formatter` - Navigate to Rust NIF directory
 - `cargo build` - Build the Rust NIF
 - `cargo test` - Run Rust tests
 - `cargo fmt` - Format Rust code
@@ -70,7 +70,7 @@ capabilities:
   with detailed type specifications
 - **DprintMarkdownFormatter.Sigil**: Provides ~M sigil for embedding markdown in
   Elixir code
-- **Rust NIF**: Located in `native/dprint_markdown_formatter_nif/`, wraps
+- **Rust NIF**: Located in `native/dprint_markdown_formatter/`, wraps
   dprint-plugin-markdown with configurable options
 
 ### Key Design Patterns
@@ -86,7 +86,7 @@ capabilities:
 ### File Structure
 
 - `lib/` - Elixir source code
-- `native/dprint_markdown_formatter_nif/` - Rust NIF implementation
+- `native/dprint_markdown_formatter/` - Rust NIF implementation
 - `test/` - Elixir tests
 - `priv/native/` - Compiled NIF binaries
 
