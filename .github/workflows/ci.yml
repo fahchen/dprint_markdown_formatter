@@ -96,8 +96,6 @@ jobs:
             otp: "26.2"
           - elixir: "1.16.3"
             otp: "26.2"
-          - elixir: "1.16.3"
-            otp: "25.3"
     steps:
       - uses: actions/checkout@v4
 
