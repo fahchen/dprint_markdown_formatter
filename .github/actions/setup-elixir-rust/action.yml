@@ -38,7 +38,6 @@ runs:
         version-type: ${{ inputs.elixir-version == '' && 'strict' || '' }}
         elixir-version: ${{ inputs.elixir-version }}
         otp-version: ${{ inputs.otp-version }}
-      shell: bash
 
     - name: Cache Elixir Dependencies
       uses: actions/cache@v4
@@ -50,7 +49,6 @@ runs:
         key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock', 'native/dprint_markdown_formatter/Cargo.lock') }}${{ inputs.cache-key-suffix }}
         restore-keys: |
           mix-${{ runner.os }}-${{ steps.setup-beam.outputs.otp-version }}-${{ steps.setup-beam.outputs.elixir-version }}${{ inputs.cache-key-suffix }}
-      shell: bash
 
     - name: Install Dependencies
       run: mix deps.get
@@ -59,7 +57,6 @@ runs:
     - name: Setup Rust
       if: inputs.skip-rust != 'true'
       uses: actions-rust-lang/setup-rust-toolchain@v1
-      shell: bash
 
     - name: Cache Rust Dependencies
       if: inputs.skip-rust != 'true'
@@ -72,5 +69,4 @@ runs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('native/dprint_markdown_formatter/Cargo.lock') }}${{ inputs.cache-key-suffix }}
         restore-keys: |
           ${{ runner.os }}-cargo-${{ inputs.cache-key-suffix }}
-      shell: bash
 
