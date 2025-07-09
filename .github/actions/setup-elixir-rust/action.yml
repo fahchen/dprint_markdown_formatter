@@ -69,4 +69,3 @@ runs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('native/dprint_markdown_formatter/Cargo.lock') }}${{ inputs.cache-key-suffix }}
         restore-keys: |
           ${{ runner.os }}-cargo-${{ inputs.cache-key-suffix }}
-
