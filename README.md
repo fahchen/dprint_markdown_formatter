@@ -231,7 +231,7 @@ mix credo         # Static analysis
 mix dialyzer      # Type checking
 mix test          # Run tests
 
-# Rust development (in native/dprint_markdown_formatter_nif/)
+# Rust development (in native/dprint_markdown_formatter/)
 cargo build       # Build the NIF
 cargo test        # Run Rust tests
 cargo fmt         # Format Rust code
@@ -254,7 +254,7 @@ excellent developer experience and Rust's performance:
 - `DprintMarkdownFormatter`: Main public API
 - `DprintMarkdownFormatter.Native`: Rustler NIF wrapper
 - `DprintMarkdownFormatter.Sigil`: `~M` sigil implementation
-- Rust NIF: Core formatting engine in `native/dprint_markdown_formatter_nif/`
+- Rust NIF: Core formatting engine in `native/dprint_markdown_formatter/`
 
 ## Contributing
 
