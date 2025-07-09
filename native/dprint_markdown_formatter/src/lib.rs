@@ -37,7 +37,7 @@ fn format_markdown(text: String, config: HashMap<Atom, Term>) -> Result<String, 
 
     // Format the text using dprint-plugin-markdown
     format_text(&text, &dprint_config, |_, _, _| Ok(None))
-        .map_err(|e| format!("Formatting failed: {}", e))
+        .map_err(|e| format!("Formatting failed: {e}"))
         .map(|result| result.unwrap_or(text))
 }
 
