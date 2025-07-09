@@ -21,18 +21,14 @@ jobs:
 
     permissions:
       contents: write
-      id-token: write
-      attestations: write
 
     strategy:
       fail-fast: false
       matrix:
         nif: ["2.16"]
         job:
-          - { target: aarch64-apple-darwin, os: macos-13 }
-          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04, use-cross: true }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-22.04, use-cross: true }
           - { target: x86_64-apple-darwin, os: macos-13 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04, use-cross: true }
           - { target: x86_64-pc-windows-gnu, os: windows-2022 }
           - { target: x86_64-pc-windows-msvc, os: windows-2022 }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
@@ -66,11 +62,6 @@ jobs:
           nif-version: ${{ matrix.nif }}
           use-cross: ${{ matrix.job.use-cross || false }}
           project-dir: native/dprint_markdown_formatter
-
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-path: ${{ steps.build-crate.outputs.file-path }}
 
       - name: Artifact upload
         uses: actions/upload-artifact@v4
