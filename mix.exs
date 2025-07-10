@@ -11,6 +11,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       aliases: aliases(),
       dialyzer: [plt_add_apps: [:mix]],
       package: package(),
+      docs: docs(),
       dprint_markdown_formatter: [
         line_width: 80,
         text_wrap: "always"
@@ -34,7 +35,8 @@ defmodule DprintMarkdownFormatter.MixProject do
       {:typed_structor, "~> 0.5.0"},
       {:mimic, "~> 1.7", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 
@@ -65,6 +67,28 @@ defmodule DprintMarkdownFormatter.MixProject do
         "moduledoc",
         "mix",
         "format"
+      ]
+    ]
+  end
+
+  defp docs do
+    [
+      main: "DprintMarkdownFormatter",
+      source_url: "https://github.com/fahchen/dprint_markdown_formatter",
+      extras: ["README.md"],
+      groups_for_modules: [
+        "Core": [
+          DprintMarkdownFormatter,
+          DprintMarkdownFormatter.Config,
+          DprintMarkdownFormatter.Error
+        ],
+        "Sigil": [
+          DprintMarkdownFormatter.Sigil
+        ],
+        "Internal": [
+          DprintMarkdownFormatter.Native,
+          DprintMarkdownFormatter.Validator
+        ]
       ]
     ]
   end
