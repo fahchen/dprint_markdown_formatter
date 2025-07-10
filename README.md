@@ -248,6 +248,12 @@ cargo test           # Run Rust tests
 
 MIT License - see the LICENSE file for details.
 
+## Code Generation
+
+This project was generated and developed with assistance from
+[Claude Code](https://claude.ai/code), Anthropic's AI coding assistant. All
+commits in this repository include co-author attribution to Claude.
+
 ## Acknowledgments
 
 - Built on
