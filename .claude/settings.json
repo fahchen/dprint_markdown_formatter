@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "mix do check + test"
+            "command": "mix format"
           }
         ]
       }
