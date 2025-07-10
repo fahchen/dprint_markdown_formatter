@@ -2,7 +2,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "file updated, any file",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
