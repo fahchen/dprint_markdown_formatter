@@ -14,8 +14,8 @@ defmodule DprintMarkdownFormatter do
           # ... other config
           dprint_markdown_formatter: [
             line_width: 100,
-            text_wrap: "never",
-            emphasis_kind: "underscores",
+            text_wrap: :never,
+            emphasis_kind: :underscores,
 
             # Enable formatting for default attributes (moduledoc, doc, typedoc, shortdoc, deprecated)
             format_module_attributes: true,
@@ -42,6 +42,9 @@ defmodule DprintMarkdownFormatter do
     `:auto`)
   - `:unordered_list_kind` - Unordered list style: `:dashes`, `:asterisks`
     (default: `:dashes`)
+
+  **Note:** Configuration values can be provided as atoms (`:never`) or strings (`"never"`). 
+  Atoms are preferred for consistency with Elixir conventions.
   - `:format_module_attributes` - Configure which module attributes to format.
     Supports four input types for maximum flexibility:
 
@@ -107,7 +110,7 @@ defmodule DprintMarkdownFormatter do
   @doc """
   Mix.Tasks.Format implementation for backward compatibility.
 
-  This is the actual function used by Mix formatter. It calls format_with_errors/2 internally
+  This is the actual function used by Mix formatter. It calls `format_with_errors/2` internally
   and returns the original content if formatting fails.
 
   ## Examples
@@ -140,7 +143,18 @@ defmodule DprintMarkdownFormatter do
   Formats markdown text with error details.
 
   Returns `{:ok, formatted_content}` on success, or `{:error, error}` on failure.
-  This provides more detailed error information than the Mix.Tasks.Format version.
+  This provides more detailed error information than the `Mix.Tasks.Format` version.
+
+  ## Examples
+
+      iex> DprintMarkdownFormatter.format_with_errors("# Hello    World", [])
+      {:ok, "# Hello World\\n"}
+
+      iex> DprintMarkdownFormatter.format_with_errors("# Hello", line_width: 100)
+      {:ok, "# Hello\\n"}
+
+      # Error cases return detailed error information (e.g., invalid content types)
+      # {:error, %DprintMarkdownFormatter.Error.ValidationError{}} would be returned for invalid inputs
   """
   @spec format_with_errors(String.t(), keyword()) :: {:ok, String.t()} | {:error, Error.t()}
   def format_with_errors(contents, opts) when is_binary(contents) and is_list(opts) do

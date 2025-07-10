@@ -101,8 +101,8 @@ def project do
     # ... other config
     dprint_markdown_formatter: [
       line_width: 100,
-      text_wrap: "never",
-      emphasis_kind: "underscores",
+      text_wrap: :never,
+      emphasis_kind: :underscores,
       format_module_attributes: true  # Enable module attribute formatting
     ]
   ]
@@ -114,9 +114,9 @@ end
 ```elixir
 opts = [
   line_width: 120,
-  text_wrap: "never",
-  emphasis_kind: "underscores",
-  unordered_list_kind: "asterisks"
+  text_wrap: :never,
+  emphasis_kind: :underscores,
+  unordered_list_kind: :asterisks
 ]
 
 DprintMarkdownFormatter.format(markdown, opts)
@@ -124,14 +124,17 @@ DprintMarkdownFormatter.format(markdown, opts)
 
 ### Available Options
 
-| Option                      | Default       | Description                                        |
-| --------------------------- | ------------- | -------------------------------------------------- |
-| `:line_width`               | `80`          | Maximum line width                                 |
-| `:text_wrap`                | `"always"`    | Text wrapping: `"always"`, `"never"`, `"maintain"` |
-| `:emphasis_kind`            | `"asterisks"` | Emphasis style: `"asterisks"`, `"underscores"`     |
-| `:strong_kind`              | `"asterisks"` | Strong text style: `"asterisks"`, `"underscores"`  |
-| `:unordered_list_kind`      | `"dashes"`    | List style: `"dashes"`, `"asterisks"`              |
-| `:format_module_attributes` | `nil`         | Module attribute formatting (see below)            |
+| Option                      | Default      | Description                                     |
+| --------------------------- | ------------ | ----------------------------------------------- |
+| `:line_width`               | `80`         | Maximum line width                              |
+| `:text_wrap`                | `:always`    | Text wrapping: `:always`, `:never`, `:maintain` |
+| `:emphasis_kind`            | `:asterisks` | Emphasis style: `:asterisks`, `:underscores`    |
+| `:strong_kind`              | `:asterisks` | Strong text style: `:asterisks`, `:underscores` |
+| `:unordered_list_kind`      | `:dashes`    | List style: `:dashes`, `:asterisks`             |
+| `:format_module_attributes` | `nil`        | Module attribute formatting (see below)         |
+
+**Note:** Configuration values can be provided as atoms (`:never`) or strings
+(`"never"`). Atoms are preferred for consistency with Elixir conventions.
 
 ### Module Attribute Configuration
 

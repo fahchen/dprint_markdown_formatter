@@ -48,6 +48,17 @@ defmodule DprintMarkdownFormatter.Error do
 
   @doc """
   Creates a runtime error for parsing failures.
+
+  Used when Elixir code parsing fails, such as when processing module attributes.
+
+  ## Examples
+
+      iex> DprintMarkdownFormatter.Error.parse_error("Failed to parse code")
+      %RuntimeError{message: "Failed to parse code"}
+
+      iex> original_error = %SyntaxError{message: "unexpected token"}
+      iex> DprintMarkdownFormatter.Error.parse_error("Parse failed", original_error: original_error)
+      %RuntimeError{message: "Parse failed: %SyntaxError{message: \\"unexpected token\\"}"}
   """
   @spec parse_error(String.t(), keyword()) :: Exception.t()
   def parse_error(message, opts \\ []) do
@@ -81,6 +92,16 @@ defmodule DprintMarkdownFormatter.Error do
 
   @doc """
   Creates a runtime error for NIF failures.
+
+  Used when the Rust NIF returns an error during markdown formatting.
+
+  ## Examples
+
+      iex> DprintMarkdownFormatter.Error.nif_error("NIF formatting failed")
+      %RuntimeError{message: "NIF formatting failed"}
+
+      iex> DprintMarkdownFormatter.Error.nif_error("NIF error", original_error: "Invalid markdown syntax")
+      %RuntimeError{message: "NIF error: Invalid markdown syntax"}
   """
   @spec nif_error(String.t(), keyword()) :: Exception.t()
   def nif_error(message, opts \\ []) do

@@ -39,6 +39,9 @@ defmodule DprintMarkdownFormatter.Sigil do
   @doc """
   Creates a markdown string from the given content.
 
+  The ~M sigil creates a raw markdown string that can be formatted by `mix format`
+  when the DprintMarkdownFormatter plugin is configured.
+
   ## Examples
 
       iex> import DprintMarkdownFormatter.Sigil
@@ -48,6 +51,14 @@ defmodule DprintMarkdownFormatter.Sigil do
       iex> import DprintMarkdownFormatter.Sigil
       iex> ~M"**Bold** and *italic* text"
       "**Bold** and *italic* text"
+
+      iex> import DprintMarkdownFormatter.Sigil
+      iex> ~M\"\"\"
+      ...> # Title
+      ...> 
+      ...> Content here.
+      ...> \"\"\"
+      "# Title\\n\\nContent here.\\n"
   """
   @spec sigil_M(binary(), list()) :: binary()
   def sigil_M(markdown, _modifiers) when is_binary(markdown) do

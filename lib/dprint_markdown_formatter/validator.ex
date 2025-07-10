@@ -40,12 +40,21 @@ defmodule DprintMarkdownFormatter.Validator do
   @doc """
   Validates formatting options.
 
+  Ensures that options are provided as a keyword list and all values are valid.
+  Unknown options are allowed for forward compatibility.
+
   ## Examples
 
       iex> DprintMarkdownFormatter.Validator.validate_options([line_width: 80])
       {:ok, [line_width: 80]}
 
+      iex> DprintMarkdownFormatter.Validator.validate_options([line_width: 80, text_wrap: :never])
+      {:ok, [line_width: 80, text_wrap: :never]}
+
       iex> DprintMarkdownFormatter.Validator.validate_options(%{line_width: 80})
+      {:error, %DprintMarkdownFormatter.Error.ValidationError{}}
+
+      iex> DprintMarkdownFormatter.Validator.validate_options([line_width: -1])
       {:error, %DprintMarkdownFormatter.Error.ValidationError{}}
   """
   @spec validate_options(term()) :: validation_result(keyword())

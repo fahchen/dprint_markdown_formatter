@@ -97,7 +97,9 @@ end
 
 Following recent improvements, the codebase maintains strict privacy boundaries:
 
-- **13 internal types** are private (`@typep`) in Config, Native, and Validator modules
+- **13 internal types** are private (`@typep`) in Config, Native, and Validator
+  modules
 - **Internal validation functions** are private (`defp`) in Validator module
 - **Public API surface** is minimal - only expose what other modules need
-- **Cross-module dependencies** follow a clear hierarchy: Main → Config/Error/Validator/Native
+- **Cross-module dependencies** follow a clear hierarchy: Main →
+  Config/Error/Validator/Native

@@ -55,6 +55,16 @@ defmodule DprintMarkdownFormatter.Config do
 
   Returns a validated configuration struct with proper type checking. Invalid
   values are replaced with defaults and warnings are logged.
+
+  ## Examples
+
+      # With valid configuration in mix.exs
+      iex> DprintMarkdownFormatter.Config.load()
+      %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
+
+      # With invalid configuration values (logs warnings and uses defaults)
+      iex> DprintMarkdownFormatter.Config.load()
+      %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
   """
   @spec load() :: t()
   def load do
@@ -98,7 +108,18 @@ defmodule DprintMarkdownFormatter.Config do
   @doc """
   Merges a configuration struct with runtime options.
 
-  Runtime options take precedence over configuration values.
+  Runtime options take precedence over configuration values. Only valid
+  options are merged; invalid options are ignored with a warning.
+
+  ## Examples
+
+      iex> config = %DprintMarkdownFormatter.Config{line_width: 80}
+      iex> DprintMarkdownFormatter.Config.merge(config, [line_width: 100])
+      %DprintMarkdownFormatter.Config{line_width: 100}
+
+      iex> config = %DprintMarkdownFormatter.Config{text_wrap: :always}
+      iex> DprintMarkdownFormatter.Config.merge(config, [text_wrap: :never, line_width: 120])
+      %DprintMarkdownFormatter.Config{text_wrap: :never, line_width: 120}
   """
   @spec merge(t(), keyword()) :: t()
   def merge(%__MODULE__{} = config, opts) when is_list(opts) do
@@ -118,7 +139,15 @@ defmodule DprintMarkdownFormatter.Config do
 
   @doc """
   Returns a map with only the dprint-related fields for the NIF.
-  Excludes format_module_attributes which is only used by Elixir.
+
+  Excludes format_module_attributes which is only used by Elixir code.
+  This map is passed directly to the Rust NIF for formatting.
+
+  ## Examples
+
+      iex> config = %DprintMarkdownFormatter.Config{line_width: 100, text_wrap: :never}
+      iex> DprintMarkdownFormatter.Config.to_nif_config(config)
+      %{line_width: 100, text_wrap: :never, emphasis_kind: :asterisks}
   """
   @spec to_nif_config(t()) :: %{
           line_width: non_neg_integer(),

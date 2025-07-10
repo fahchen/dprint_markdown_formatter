@@ -40,11 +40,31 @@ defmodule DprintMarkdownFormatter.MixProject do
 
   defp package do
     [
+      description: "A fast, configurable markdown formatter for Elixir using Rust's dprint-plugin-markdown",
       files: [
         "lib",
         "native",
         "checksum-*.exs",
-        "mix.exs"
+        "mix.exs",
+        "README.md",
+        "LICENSE"
+      ],
+      maintainers: ["Fah Chen"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/fahchen/dprint_markdown_formatter",
+        "Documentation" => "https://hexdocs.pm/dprint_markdown_formatter"
+      },
+      keywords: [
+        "markdown",
+        "formatter",
+        "dprint",
+        "rust",
+        "nif",
+        "documentation",
+        "moduledoc",
+        "mix",
+        "format"
       ]
     ]
   end

@@ -35,7 +35,26 @@ defmodule DprintMarkdownFormatter.Native do
   Formats markdown text with configurable options.
 
   This function is implemented in Rust and provides the core formatting
-  functionality.
+  functionality using the dprint-plugin-markdown library.
+
+  ## Parameters
+
+  - `text` - The markdown text to format
+  - `options` - A map of formatting options (see `format_options/0` type)
+
+  ## Returns
+
+  - `{:ok, formatted_text}` on successful formatting
+  - `{:error, error_message}` if formatting fails
+
+  ## Examples
+
+      iex> options = %{line_width: 80, text_wrap: :always, emphasis_kind: :asterisks, strong_kind: :asterisks, new_line_kind: :auto, unordered_list_kind: :dashes}
+      iex> DprintMarkdownFormatter.Native.format_markdown("# Hello    World", options)
+      {:ok, "# Hello World\\n"}
+
+      iex> DprintMarkdownFormatter.Native.format_markdown("*   Item 1\\n*   Item 2", options)
+      {:ok, "- Item 1\\n- Item 2\\n"}
   """
   @spec format_markdown(String.t(), format_options()) :: {:ok, String.t()} | {:error, String.t()}
   def format_markdown(_text, _options), do: :erlang.nif_error(:nif_not_loaded)
