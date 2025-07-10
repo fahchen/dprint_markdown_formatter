@@ -9,7 +9,7 @@ defmodule DprintMarkdownFormatter.Validator do
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
 
-  @type validation_result(t) :: {:ok, t} | {:error, Error.ValidationError.t()}
+  @typep validation_result(t) :: {:ok, t} | {:error, Error.ValidationError.t()}
 
   @doc """
   Validates content input for formatting.
@@ -99,21 +99,11 @@ defmodule DprintMarkdownFormatter.Validator do
      )}
   end
 
-  @doc """
-  Validates an extension string.
+  # Private validation functions
 
-  ## Examples
+  defp validate_extension(ext) when ext in [".md", ".markdown", ".ex", ".exs"], do: {:ok, ext}
 
-      iex> DprintMarkdownFormatter.Validator.validate_extension(".md")
-      {:ok, ".md"}
-
-      iex> DprintMarkdownFormatter.Validator.validate_extension("md")
-      {:error, %DprintMarkdownFormatter.Error.ValidationError{}}
-  """
-  @spec validate_extension(term()) :: validation_result(String.t())
-  def validate_extension(ext) when ext in [".md", ".markdown", ".ex", ".exs"], do: {:ok, ext}
-
-  def validate_extension(ext) when is_binary(ext) do
+  defp validate_extension(ext) when is_binary(ext) do
     {:error,
      Error.validation_error("Unsupported file extension",
        field: :extension,
@@ -122,7 +112,7 @@ defmodule DprintMarkdownFormatter.Validator do
      )}
   end
 
-  def validate_extension(ext) do
+  defp validate_extension(ext) do
     {:error,
      Error.validation_error("Extension must be a string",
        field: :extension,
@@ -131,21 +121,9 @@ defmodule DprintMarkdownFormatter.Validator do
      )}
   end
 
-  @doc """
-  Validates a sigil atom.
+  defp validate_sigil(:M), do: {:ok, :M}
 
-  ## Examples
-
-      iex> DprintMarkdownFormatter.Validator.validate_sigil(:M)
-      {:ok, :M}
-
-      iex> DprintMarkdownFormatter.Validator.validate_sigil(:X)
-      {:error, %DprintMarkdownFormatter.Error.ValidationError{}}
-  """
-  @spec validate_sigil(term()) :: validation_result(atom())
-  def validate_sigil(:M), do: {:ok, :M}
-
-  def validate_sigil(sigil) when is_atom(sigil) do
+  defp validate_sigil(sigil) when is_atom(sigil) do
     {:error,
      Error.validation_error("Unsupported sigil",
        field: :sigil,
@@ -154,7 +132,7 @@ defmodule DprintMarkdownFormatter.Validator do
      )}
   end
 
-  def validate_sigil(sigil) do
+  defp validate_sigil(sigil) do
     {:error,
      Error.validation_error("Sigil must be an atom",
        field: :sigil,
@@ -162,8 +140,6 @@ defmodule DprintMarkdownFormatter.Validator do
        expected: "atom"
      )}
   end
-
-  # Private validation functions
 
   defp validate_option_values(opts) do
     result =

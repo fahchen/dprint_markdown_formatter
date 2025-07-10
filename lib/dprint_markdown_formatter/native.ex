@@ -16,13 +16,13 @@ defmodule DprintMarkdownFormatter.Native do
     version: Mix.Project.config()[:version],
     nif_versions: ["2.16", "2.17"]
 
-  @type text_wrap_option() :: :always | :never | :maintain
-  @type emphasis_kind_option() :: :asterisks | :underscores
-  @type strong_kind_option() :: :asterisks | :underscores
-  @type new_line_kind_option() :: :auto | :lf | :crlf
-  @type unordered_list_kind_option() :: :dashes | :asterisks
+  @typep text_wrap_option() :: :always | :never | :maintain
+  @typep emphasis_kind_option() :: :asterisks | :underscores
+  @typep strong_kind_option() :: :asterisks | :underscores
+  @typep new_line_kind_option() :: :auto | :lf | :crlf
+  @typep unordered_list_kind_option() :: :dashes | :asterisks
 
-  @type format_options() :: %{
+  @typep format_options() :: %{
           line_width: pos_integer(),
           text_wrap: text_wrap_option(),
           emphasis_kind: emphasis_kind_option(),

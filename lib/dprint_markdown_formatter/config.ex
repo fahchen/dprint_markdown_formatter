@@ -5,12 +5,12 @@ defmodule DprintMarkdownFormatter.Config do
   """
   use TypedStructor
 
-  @type text_wrap_option() :: :always | :never | :maintain
-  @type emphasis_kind_option() :: :asterisks | :underscores
-  @type strong_kind_option() :: :asterisks | :underscores
-  @type new_line_kind_option() :: :auto | :lf | :crlf
-  @type unordered_list_kind_option() :: :dashes | :asterisks
-  @type module_attributes_option() :: nil | boolean() | [atom()]
+  @typep text_wrap_option() :: :always | :never | :maintain
+  @typep emphasis_kind_option() :: :asterisks | :underscores
+  @typep strong_kind_option() :: :asterisks | :underscores
+  @typep new_line_kind_option() :: :auto | :lf | :crlf
+  @typep unordered_list_kind_option() :: :dashes | :asterisks
+  @typep module_attributes_option() :: nil | boolean() | [atom()]
 
   typed_structor enforce: true do
     field :line_width, pos_integer(), default: 80
