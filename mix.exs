@@ -49,7 +49,8 @@ defmodule DprintMarkdownFormatter.MixProject do
         "checksum-*.exs",
         "mix.exs",
         "README.md",
-        "LICENSE"
+        "LICENSE",
+        "llms.txt"
       ],
       maintainers: ["Fah Chen"],
       licenses: ["MIT"],
@@ -75,7 +76,7 @@ defmodule DprintMarkdownFormatter.MixProject do
     [
       main: "DprintMarkdownFormatter",
       source_url: "https://github.com/fahchen/dprint_markdown_formatter",
-      extras: ["README.md"],
+      extras: ["README.md", "llms.txt"],
       groups_for_modules: [
         "Core": [
           DprintMarkdownFormatter,

@@ -1,0 +1,349 @@
+# DprintMarkdownFormatter Usage Guide for LLMs
+
+This guide helps LLMs understand how to use the DprintMarkdownFormatter package effectively.
+
+## Package Overview
+
+DprintMarkdownFormatter is a fast, configurable markdown formatter for Elixir that uses Rust's `dprint-plugin-markdown` via NIFs. It provides:
+
+- High-performance markdown formatting
+- Mix format integration for .md files
+- Module attribute formatting (@moduledoc, @doc, etc.)
+- Sigil support (~M)
+- Extensive configuration options
+
+## Quick Start
+
+### Installation
+
+Add to `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:dprint_markdown_formatter, "~> 0.1.0"}
+  ]
+end
+```
+
+### Basic Usage
+
+```elixir
+# Format a markdown string
+markdown = "# Poorly   Formatted   Title\n\nThis has    extra   spaces."
+formatted = DprintMarkdownFormatter.format(markdown, [])
+# => "# Poorly Formatted Title\n\nThis has extra spaces.\n"
+```
+
+## Configuration
+
+### Global Configuration (mix.exs)
+
+```elixir
+def project do
+  [
+    # ... other config
+    dprint_markdown_formatter: [
+      line_width: 100,
+      text_wrap: :never,
+      emphasis_kind: :underscores,
+      format_module_attributes: true
+    ]
+  ]
+end
+```
+
+### Per-Call Configuration
+
+```elixir
+opts = [
+  line_width: 120,
+  text_wrap: :never,
+  emphasis_kind: :underscores
+]
+
+DprintMarkdownFormatter.format(markdown, opts)
+```
+
+### Configuration Options
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `:line_width` | `80` | positive integer | Maximum line width |
+| `:text_wrap` | `:always` | `:always`, `:never`, `:maintain` | Text wrapping behavior |
+| `:emphasis_kind` | `:asterisks` | `:asterisks`, `:underscores` | Emphasis style (*text* vs _text_) |
+| `:strong_kind` | `:asterisks` | `:asterisks`, `:underscores` | Strong text style (**text** vs __text__) |
+| `:unordered_list_kind` | `:dashes` | `:dashes`, `:asterisks` | List style (- vs *) |
+| `:new_line_kind` | `:auto` | `:auto`, `:lf`, `:crlf` | Line ending type |
+| `:format_module_attributes` | `nil` | `nil`, `true`, `false`, `[atom()]` | Module attribute formatting |
+
+**Note**: Configuration values can be atoms (`:never`) or strings (`"never"`). Atoms are preferred.
+
+## Usage Patterns
+
+### 1. Direct API Usage
+
+```elixir
+# Simple formatting
+result = DprintMarkdownFormatter.format(markdown_text, [])
+
+# With custom options
+result = DprintMarkdownFormatter.format(markdown_text, [
+  line_width: 120,
+  text_wrap: :never
+])
+```
+
+### 2. Mix Format Integration
+
+Add to `.formatter.exs`:
+
+```elixir
+[
+  plugins: [DprintMarkdownFormatter]
+]
+```
+
+This enables automatic formatting of `.md` and `.markdown` files when running `mix format`.
+
+### 3. Sigil Usage
+
+```elixir
+import DprintMarkdownFormatter.Sigil
+
+# Sigil content gets formatted by mix format
+markdown = ~M"""
+# API   Documentation   
+
+This is **bold** text with    extra   spaces.
+
+*   Poorly   formatted   list
+"""
+```
+
+### 4. Module Attribute Formatting
+
+Enable in `mix.exs`:
+
+```elixir
+dprint_markdown_formatter: [
+  format_module_attributes: true  # Format default attributes
+]
+```
+
+This formats markdown in `@moduledoc`, `@doc`, `@typedoc`, `@shortdoc`, and `@deprecated`.
+
+Custom attributes:
+
+```elixir
+dprint_markdown_formatter: [
+  format_module_attributes: [:moduledoc, :doc, :custom_doc]
+]
+```
+
+## Module Attribute Formatting
+
+### Setup Requirements
+
+1. Add plugin to `.formatter.exs`:
+   ```elixir
+   [
+     plugins: [DprintMarkdownFormatter]
+   ]
+   ```
+
+2. Configure in `mix.exs`:
+   ```elixir
+   dprint_markdown_formatter: [
+     format_module_attributes: true
+   ]
+   ```
+
+3. Run `mix format` on your `.ex` files
+
+### How It Works
+
+Before formatting:
+```elixir
+defmodule MyModule do
+  @moduledoc """
+  This is   messy   markdown.
+  
+  *   Poorly formatted list
+  *   Another    item
+  """
+  
+  @doc """
+  Function docs with    extra   spaces.
+  """
+  def my_function, do: :ok
+end
+```
+
+After `mix format`:
+```elixir
+defmodule MyModule do
+  @moduledoc """
+  This is messy markdown.
+  
+  - Properly formatted list
+  - Another item
+  """
+  
+  @doc """
+  Function docs with extra spaces.
+  """
+  def my_function, do: :ok
+end
+```
+
+## Common Use Cases
+
+### 1. Documentation Formatting
+
+```elixir
+# Format README or documentation files
+content = File.read!("README.md")
+formatted = DprintMarkdownFormatter.format(content, [line_width: 100])
+File.write!("README.md", formatted)
+```
+
+### 2. CI/CD Integration
+
+```bash
+# Check if markdown files are properly formatted
+mix format --check-formatted
+```
+
+### 3. Custom Formatting Workflows
+
+```elixir
+def format_all_docs do
+  Path.wildcard("docs/**/*.md")
+  |> Enum.each(fn file ->
+    content = File.read!(file)
+    formatted = DprintMarkdownFormatter.format(content, [
+      line_width: 100,
+      text_wrap: :never
+    ])
+    File.write!(file, formatted)
+  end)
+end
+```
+
+## Troubleshooting
+
+### Module Attributes Not Being Formatted
+
+**Check these steps in order:**
+
+1. **Plugin configuration**: Ensure `.formatter.exs` has:
+   ```elixir
+   [
+     plugins: [DprintMarkdownFormatter]
+   ]
+   ```
+
+2. **Module attribute configuration**: Ensure `mix.exs` has:
+   ```elixir
+   dprint_markdown_formatter: [
+     format_module_attributes: true  # or custom list
+   ]
+   ```
+
+3. **Run on .ex files**: Module attributes are formatted when you run `mix format` on `.ex` files, not `.md` files.
+
+4. **Check attribute names**: Default formatting only applies to `:moduledoc`, `:doc`, `:typedoc`, `:shortdoc`, `:deprecated`.
+
+### Compilation Issues
+
+If you see Rust compilation errors, force precompiled binaries:
+
+```bash
+export RUSTLER_PRECOMPILED_FORCE_BUILD=false
+mix deps.get
+mix compile
+```
+
+### Configuration Not Taking Effect
+
+- **Global config**: Must be in `mix.exs` under `dprint_markdown_formatter` key
+- **Per-call config**: Passed as second argument to `format/2`
+- **Mix format**: Uses global config from `mix.exs`
+
+### Performance Considerations
+
+- **Large files**: The formatter is optimized for performance but very large files (>1MB) may take time
+- **Batch processing**: For many files, consider parallel processing with `Task.async_stream/2`
+- **Caching**: The formatter is deterministic - same input always produces same output
+
+## Advanced Usage
+
+### Custom Attribute Formatting
+
+```elixir
+# Format specific attributes only
+dprint_markdown_formatter: [
+  format_module_attributes: [
+    :moduledoc,
+    :doc,
+    :api_doc,      # custom attribute
+    :example_doc   # custom attribute
+  ]
+]
+```
+
+### Complex Configuration
+
+```elixir
+dprint_markdown_formatter: [
+  line_width: 120,
+  text_wrap: :never,
+  emphasis_kind: :underscores,
+  strong_kind: :underscores,
+  unordered_list_kind: :asterisks,
+  format_module_attributes: [
+    :moduledoc,
+    :doc,
+    :typedoc,
+    :spec_doc,
+    :example_doc
+  ]
+]
+```
+
+### Integration with Other Tools
+
+```elixir
+# Use with ExDoc
+def format_doc_files do
+  "doc/**/*.md"
+  |> Path.wildcard()
+  |> Enum.each(&format_file/1)
+end
+
+defp format_file(file) do
+  content = File.read!(file)
+  formatted = DprintMarkdownFormatter.format(content, [
+    line_width: 100,
+    text_wrap: :maintain
+  ])
+  File.write!(file, formatted)
+end
+```
+
+## Best Practices
+
+1. **Use atoms for config values**: `:never` instead of `"never"`
+2. **Set reasonable line widths**: 80-120 characters work well
+3. **Consider text wrapping**: `:maintain` preserves existing line breaks
+4. **Test configuration**: Start with defaults, then customize
+5. **Use in CI**: Add `mix format --check-formatted` to ensure consistent formatting
+6. **Document custom attributes**: If using custom module attributes, document them for your team
+
+## Performance Tips
+
+- The formatter is very fast due to Rust implementation
+- For large batches of files, use `Task.async_stream/2` for parallel processing
+- Configuration parsing is cached, so repeated calls with same options are efficient
+- Empty or very small strings are handled efficiently with early returns
