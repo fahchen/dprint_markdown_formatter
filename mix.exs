@@ -1,10 +1,13 @@
 defmodule DprintMarkdownFormatter.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/fahchen/dprint_markdown_formatter"
+
   def project do
     [
       app: :dprint_markdown_formatter,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -52,10 +55,10 @@ defmodule DprintMarkdownFormatter.MixProject do
         "LICENSE",
         "llms.txt"
       ],
-      maintainers: ["Fah Chen"],
+      maintainers: ["Phil Chen"],
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/fahchen/dprint_markdown_formatter",
+        "GitHub" => @source_url,
         "Documentation" => "https://hexdocs.pm/dprint_markdown_formatter"
       },
       keywords: [
@@ -74,8 +77,9 @@ defmodule DprintMarkdownFormatter.MixProject do
 
   defp docs do
     [
-      main: "DprintMarkdownFormatter",
-      source_url: "https://github.com/fahchen/dprint_markdown_formatter",
+      main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
       extras: ["README.md", "llms.txt"],
       groups_for_modules: [
         "Core": [
