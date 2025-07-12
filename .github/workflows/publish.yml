@@ -25,11 +25,11 @@ jobs:
       - name: Setup Elixir and Rust
         uses: ./.github/actions/setup-elixir-rust
 
-      - name: Build hex package
-        run: mix hex.build
-
       - name: Download precompiled NIFs
         run: mix rustler_precompiled.download DprintMarkdownFormatter.Native --all --ignore-unavailable
+
+      - name: Build hex package
+        run: mix hex.build
 
       - name: Publish to Hex.pm
         run: mix hex.publish --yes --replace
