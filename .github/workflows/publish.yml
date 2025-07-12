@@ -1,0 +1,36 @@
+name: Publish
+
+on:
+  workflow_run:
+    workflows: ["Precomp NIFs"]
+    types: [completed]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Only publish when:
+    # 1. The precompiled NIFs workflow completed successfully
+    # 2. The trigger was a push event (not PR, etc.)
+    # 3. The push was for a tag (refs/tags/v1.0.0, etc.)
+    if: >
+      github.event.workflow_run.conclusion == 'success' && 
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Elixir and Rust
+        uses: ./.github/actions/setup-elixir-rust
+
+      - name: Build hex package
+        run: mix hex.build
+
+      - name: Download precompiled NIFs
+        run: mix rustler_precompiled.download DprintMarkdownFormatter.Native --all --ignore-unavailable
+
+      - name: Publish to Hex.pm
+        run: mix hex.publish --yes --replace
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}

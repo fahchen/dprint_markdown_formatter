@@ -6,12 +6,12 @@ on:
       - main
     paths:
       - "native/**"
-      - ".github/workflows/release.yml"
+      - ".github/workflows/precompiled-nifs.yml"
     tags:
       - "*"
   pull_request:
     paths:
-      - ".github/workflows/release.yml"
+      - ".github/workflows/precompiled-nifs.yml"
   workflow_dispatch:
 
 jobs:
