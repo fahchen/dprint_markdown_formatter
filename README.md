@@ -32,30 +32,6 @@ end
 
 ## Quick Start
 
-### Basic Usage
-
-```elixir
-# Format a single string
-markdown = """
-#    Poorly   Formatted   Title
-
-This is a paragraph with    extra   spaces.
-
-*   Inconsistent list
-*   Another    item
-"""
-
-formatted = DprintMarkdownFormatter.format(markdown, [])
-
-# Output:
-# # Poorly Formatted Title
-# 
-# This is a paragraph with extra spaces.
-# 
-# - Inconsistent list
-# - Another item
-```
-
 ### Sigil Usage
 
 Use the `~M` sigil for embedding markdown content that gets automatically
@@ -76,13 +52,14 @@ This is **bold** text with    extra   spaces.
 # After `mix format`, the sigil content becomes properly formatted
 ```
 
-## Integration with mix format
+### Integration with mix format
 
 Add to your `.formatter.exs`:
 
 ```elixir
 [
-  plugins: [DprintMarkdownFormatter]
+  plugins: [DprintMarkdownFormatter],
+  inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}", "*.{md,markdown}"]
 ]
 ```
 
@@ -109,19 +86,6 @@ def project do
 end
 ```
 
-### Per-call Configuration
-
-```elixir
-opts = [
-  line_width: 120,
-  text_wrap: :never,
-  emphasis_kind: :underscores,
-  unordered_list_kind: :asterisks
-]
-
-DprintMarkdownFormatter.format(markdown, opts)
-```
-
 ### Available Options
 
 | Option                      | Default      | Description                                     |
@@ -136,7 +100,7 @@ DprintMarkdownFormatter.format(markdown, opts)
 **Note:** Configuration values can be provided as atoms (`:never`) or strings
 (`"never"`). Atoms are preferred for consistency with Elixir conventions.
 
-### Module Attribute Configuration
+#### Module Attribute Configuration
 
 ```elixir
 # Skip all formatting (default)
@@ -149,7 +113,7 @@ format_module_attributes: true  # [:moduledoc, :doc, :typedoc, :shortdoc, :depre
 format_module_attributes: [:moduledoc, :doc, :custom_doc]
 ```
 
-## Module Attribute Formatting Example
+**Module Attribute Formatting Example**
 
 Before `mix format`:
 
