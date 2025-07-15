@@ -108,7 +108,7 @@ defmodule DprintMarkdownFormatter do
   end
 
   @doc """
-  Mix.Tasks.Format implementation for backward compatibility.
+  Mix.Tasks.Format implementation.
 
   This is the actual function used by Mix formatter. It calls `format_with_errors/2` internally
   and returns the original content if formatting fails.

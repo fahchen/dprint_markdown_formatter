@@ -4,20 +4,10 @@ defmodule DprintMarkdownFormatter.SigilTest do
 
   doctest DprintMarkdownFormatter.Sigil
 
-  describe "~M sigil" do
-    test "returns raw markdown string" do
+  describe "basic functionality" do
+    test "returns formatted markdown string" do
       result = ~M"# Hello World"
       assert result == "# Hello World"
-    end
-
-    test "preserves formatting and whitespace" do
-      result = ~M"""
-      # Hello    World
-
-      This   has   extra   spaces.
-      """
-
-      assert result == "# Hello    World\n\nThis   has   extra   spaces.\n"
     end
 
     test "handles empty string" do
@@ -33,63 +23,46 @@ defmodule DprintMarkdownFormatter.SigilTest do
       * Item 2
       """
 
-      assert String.contains?(result, "# Title")
-      assert String.contains?(result, "* Item 1")
-      assert String.contains?(result, "* Item 2")
+      assert result == "# Title\n\n- Item 1\n- Item 2"
+    end
+  end
+
+  describe "formatting behavior" do
+    test "formats extra spaces in headers" do
+      result = ~M"# Hello    World"
+      assert result == "# Hello World"
     end
 
+    test "formats extra spaces in text" do
+      result = ~M"This   has   extra   spaces."
+      assert result == "This has extra spaces."
+    end
+
+    test "formats multiline content with extra spaces" do
+      result = ~M"""
+      # Hello    World
+
+      This   has   extra   spaces.
+      """
+
+      assert result == "# Hello World\n\nThis has extra spaces."
+    end
+  end
+
+  describe "modifier handling" do
     test "ignores all modifiers" do
       result = ~M"# Hello World"xyz
       assert result == "# Hello World"
     end
 
-    test "ignores 'f' modifier" do
+    test "ignores 'f' modifier and still formats" do
       result = ~M"# Hello    World"f
-      assert result == "# Hello    World"
-    end
-
-    test "works with multiple modifiers" do
-      result = ~M"# Hello World"abcf
       assert result == "# Hello World"
     end
-  end
 
-  describe "practical usage examples" do
-    test "documentation example" do
-      markdown = ~M"""
-      # API Documentation
-
-      ## User Management
-
-      * Create user
-      * Update user  
-      * Delete user
-      """
-
-      # Verify the raw markdown is preserved
-      assert String.contains?(markdown, "# API Documentation")
-      assert String.contains?(markdown, "* Create user")
-      assert String.contains?(markdown, "* Update user")
-      assert String.contains?(markdown, "* Delete user")
-    end
-
-    test "email template example" do
-      template = ~M"""
-      # Welcome   to   Our   Service!
-
-      **Thank you** for signing up.
-
-      ## Next Steps:
-
-      1.   Verify your email
-      2.   Complete your profile
-      3.   Start using the service
-      """
-
-      assert String.contains?(template, "# Welcome   to   Our   Service!")
-      assert String.contains?(template, "1.   Verify your email")
-      assert String.contains?(template, "2.   Complete your profile")
-      assert String.contains?(template, "3.   Start using the service")
+    test "works with multiple modifiers and still formats" do
+      result = ~M"# Hello    World"abcf
+      assert result == "# Hello World"
     end
   end
 end

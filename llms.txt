@@ -21,19 +21,11 @@ Add to `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dprint_markdown_formatter, "~> 0.1.0"}
+    {:dprint_markdown_formatter, "~> 0.4.0"}
   ]
 end
 ```
 
-### Basic Usage
-
-```elixir
-# Format a markdown string
-markdown = "# Poorly   Formatted   Title\n\nThis has    extra   spaces."
-formatted = DprintMarkdownFormatter.format(markdown, [])
-# => "# Poorly Formatted Title\n\nThis has extra spaces.\n"
-```
 
 ## Configuration
 
@@ -53,17 +45,6 @@ def project do
 end
 ```
 
-### Per-Call Configuration
-
-```elixir
-opts = [
-  line_width: 120,
-  text_wrap: :never,
-  emphasis_kind: :underscores
-]
-
-DprintMarkdownFormatter.format(markdown, opts)
-```
 
 ### Configuration Options
 
@@ -81,32 +62,20 @@ DprintMarkdownFormatter.format(markdown, opts)
 
 ## Usage Patterns
 
-### 1. Direct API Usage
-
-```elixir
-# Simple formatting
-result = DprintMarkdownFormatter.format(markdown_text, [])
-
-# With custom options
-result = DprintMarkdownFormatter.format(markdown_text, [
-  line_width: 120,
-  text_wrap: :never
-])
-```
-
-### 2. Mix Format Integration
+### 1. Mix Format Integration
 
 Add to `.formatter.exs`:
 
 ```elixir
 [
-  plugins: [DprintMarkdownFormatter]
+  plugins: [DprintMarkdownFormatter],
+  inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}", "*.{md,markdown}"]
 ]
 ```
 
 This enables automatic formatting of `.md` and `.markdown` files when running `mix format`.
 
-### 3. Sigil Usage
+### 2. Sigil Usage
 
 ```elixir
 import DprintMarkdownFormatter.Sigil
@@ -121,7 +90,7 @@ This is **bold** text with    extra   spaces.
 """
 ```
 
-### 4. Module Attribute Formatting
+### 3. Module Attribute Formatting
 
 Enable in `mix.exs`:
 
@@ -148,7 +117,8 @@ dprint_markdown_formatter: [
 1. Add plugin to `.formatter.exs`:
    ```elixir
    [
-     plugins: [DprintMarkdownFormatter]
+     plugins: [DprintMarkdownFormatter],
+     inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}", "*.{md,markdown}"]
    ]
    ```
 
@@ -199,36 +169,23 @@ end
 
 ## Common Use Cases
 
-### 1. Documentation Formatting
-
-```elixir
-# Format README or documentation files
-content = File.read!("README.md")
-formatted = DprintMarkdownFormatter.format(content, [line_width: 100])
-File.write!("README.md", formatted)
-```
-
-### 2. CI/CD Integration
+### 1. CI/CD Integration
 
 ```bash
 # Check if markdown files are properly formatted
 mix format --check-formatted
 ```
 
-### 3. Custom Formatting Workflows
+### 2. Custom Formatting Workflows
 
-```elixir
-def format_all_docs do
-  Path.wildcard("docs/**/*.md")
-  |> Enum.each(fn file ->
-    content = File.read!(file)
-    formatted = DprintMarkdownFormatter.format(content, [
-      line_width: 100,
-      text_wrap: :never
-    ])
-    File.write!(file, formatted)
-  end)
-end
+Use `mix format` with specific file patterns:
+
+```bash
+# Format all markdown files
+mix format "**/*.md"
+
+# Format specific directories
+mix format "docs/**/*.{md,markdown}"
 ```
 
 ## Troubleshooting
@@ -240,7 +197,8 @@ end
 1. **Plugin configuration**: Ensure `.formatter.exs` has:
    ```elixir
    [
-     plugins: [DprintMarkdownFormatter]
+     plugins: [DprintMarkdownFormatter],
+     inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}", "*.{md,markdown}"]
    ]
    ```
 
@@ -314,22 +272,14 @@ dprint_markdown_formatter: [
 
 ### Integration with Other Tools
 
-```elixir
-# Use with ExDoc
-def format_doc_files do
-  "doc/**/*.md"
-  |> Path.wildcard()
-  |> Enum.each(&format_file/1)
-end
+Use `mix format` in your build tools and CI:
 
-defp format_file(file) do
-  content = File.read!(file)
-  formatted = DprintMarkdownFormatter.format(content, [
-    line_width: 100,
-    text_wrap: :maintain
-  ])
-  File.write!(file, formatted)
-end
+```bash
+# In your build scripts
+mix format --check-formatted
+
+# Format before generating docs
+mix format && mix docs
 ```
 
 ## Best Practices
