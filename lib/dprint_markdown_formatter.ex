@@ -43,8 +43,9 @@ defmodule DprintMarkdownFormatter do
   - `:unordered_list_kind` - Unordered list style: `:dashes`, `:asterisks`
     (default: `:dashes`)
 
-  **Note:** Configuration values can be provided as atoms (`:never`) or strings (`"never"`). 
-  Atoms are preferred for consistency with Elixir conventions.
+  **Note:** Configuration values can be provided as atoms (`:never`) or strings
+  (`"never"`). Atoms are preferred for consistency with Elixir conventions.
+
   - `:format_module_attributes` - Configure which module attributes to format.
     Supports four input types for maximum flexibility:
 
@@ -111,8 +112,9 @@ defmodule DprintMarkdownFormatter do
   @doc """
   Mix.Tasks.Format implementation.
 
-  This is the actual function used by Mix formatter. It calls `format_with_errors/2` internally
-  and returns the original content if formatting fails.
+  This is the actual function used by Mix formatter. It calls
+  `format_with_errors/2` internally and returns the original content if formatting
+  fails.
 
   ## Examples
 
@@ -144,7 +146,8 @@ defmodule DprintMarkdownFormatter do
   Formats markdown text with error details.
 
   Returns `{:ok, formatted_content}` on success, or `{:error, error}` on failure.
-  This provides more detailed error information than the `Mix.Tasks.Format` version.
+  This provides more detailed error information than the `Mix.Tasks.Format`
+  version.
 
   ## Examples
 

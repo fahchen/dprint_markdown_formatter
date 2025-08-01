@@ -2,8 +2,8 @@ defmodule DprintMarkdownFormatter.Validator do
   @moduledoc """
   Input validation utilities for DprintMarkdownFormatter.
 
-  Provides comprehensive validation for all inputs including content, 
-  options, and configuration values.
+  Provides comprehensive validation for all inputs including content, options, and
+  configuration values.
   """
 
   alias DprintMarkdownFormatter.Config

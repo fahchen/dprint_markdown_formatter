@@ -2,8 +2,8 @@ defmodule DprintMarkdownFormatter.StringUtils do
   @moduledoc """
   String processing utilities for markdown formatting.
 
-  This module contains pure functions for processing and normalizing markdown content,
-  particularly for handling heredoc content and whitespace normalization.
+  This module contains pure functions for processing and normalizing markdown
+  content, particularly for handling heredoc content and whitespace normalization.
   """
 
   @doc """

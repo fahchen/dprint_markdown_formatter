@@ -17,7 +17,8 @@ defmodule DprintMarkdownFormatter.MixProject do
       docs: docs(),
       dprint_markdown_formatter: [
         line_width: 80,
-        text_wrap: "always"
+        text_wrap: "always",
+        format_module_attributes: true
       ]
     ]
   end
