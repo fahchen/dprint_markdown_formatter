@@ -2,8 +2,8 @@ defmodule DprintMarkdownFormatter.Validator do
   @moduledoc """
   Input validation utilities for DprintMarkdownFormatter.
 
-  Provides comprehensive validation for all inputs including content, 
-  options, and configuration values.
+  Provides comprehensive validation for all inputs including content, options, and
+  configuration values.
   """
 
   alias DprintMarkdownFormatter.Config
@@ -110,43 +110,34 @@ defmodule DprintMarkdownFormatter.Validator do
 
   # Private validation functions
 
-  defp validate_extension(ext) when ext in [".md", ".markdown", ".ex", ".exs"], do: {:ok, ext}
+  defp validate_extension(value),
+    do: validate_string_choice(value, :extension, [".md", ".markdown", ".ex", ".exs"])
 
-  defp validate_extension(ext) when is_binary(ext) do
-    {:error,
-     Error.validation_error("Unsupported file extension",
-       field: :extension,
-       value: ext,
-       expected: ".md, .markdown, .ex, or .exs"
-     )}
+  defp validate_sigil(value), do: validate_atom_choice(value, :sigil, [:M])
+
+  defp validate_string_choice(value, field, valid_choices) when is_binary(value) do
+    if value in valid_choices do
+      {:ok, value}
+    else
+      expected_string = Enum.join(valid_choices, ", ")
+
+      {:error,
+       Error.validation_error(
+         "Unsupported #{field |> Atom.to_string() |> String.replace("_", " ")}",
+         field: field,
+         value: value,
+         expected: expected_string
+       )}
+    end
   end
 
-  defp validate_extension(ext) do
+  defp validate_string_choice(value, field, _valid_choices) do
     {:error,
-     Error.validation_error("Extension must be a string",
-       field: :extension,
-       value: ext,
+     Error.validation_error(
+       "#{field |> Atom.to_string() |> String.replace("_", " ") |> String.capitalize()} must be a string",
+       field: field,
+       value: value,
        expected: "string"
-     )}
-  end
-
-  defp validate_sigil(:M), do: {:ok, :M}
-
-  defp validate_sigil(sigil) when is_atom(sigil) do
-    {:error,
-     Error.validation_error("Unsupported sigil",
-       field: :sigil,
-       value: sigil,
-       expected: ":M"
-     )}
-  end
-
-  defp validate_sigil(sigil) do
-    {:error,
-     Error.validation_error("Sigil must be an atom",
-       field: :sigil,
-       value: sigil,
-       expected: "atom"
      )}
   end
 
@@ -201,102 +192,42 @@ defmodule DprintMarkdownFormatter.Validator do
      )}
   end
 
-  defp validate_text_wrap(wrap) when wrap in [:always, :never, :maintain], do: {:ok, wrap}
+  defp validate_text_wrap(value),
+    do: validate_atom_choice(value, :text_wrap, [:always, :never, :maintain])
 
-  defp validate_text_wrap(wrap) when is_atom(wrap) do
-    {:error,
-     Error.validation_error("Invalid text wrap option",
-       field: :text_wrap,
-       value: wrap,
-       expected: ":always, :never, or :maintain"
-     )}
+  defp validate_emphasis_kind(value),
+    do: validate_atom_choice(value, :emphasis_kind, [:asterisks, :underscores])
+
+  defp validate_strong_kind(value),
+    do: validate_atom_choice(value, :strong_kind, [:asterisks, :underscores])
+
+  defp validate_new_line_kind(value),
+    do: validate_atom_choice(value, :new_line_kind, [:auto, :lf, :crlf])
+
+  defp validate_unordered_list_kind(value),
+    do: validate_atom_choice(value, :unordered_list_kind, [:dashes, :asterisks])
+
+  defp validate_atom_choice(value, field, valid_choices) when is_atom(value) do
+    if value in valid_choices do
+      {:ok, value}
+    else
+      expected_string = Enum.map_join(valid_choices, ", ", &inspect/1)
+
+      {:error,
+       Error.validation_error("Invalid #{field |> Atom.to_string() |> String.replace("_", " ")}",
+         field: field,
+         value: value,
+         expected: expected_string
+       )}
+    end
   end
 
-  defp validate_text_wrap(wrap) do
+  defp validate_atom_choice(value, field, _valid_choices) do
     {:error,
-     Error.validation_error("Text wrap must be an atom",
-       field: :text_wrap,
-       value: wrap,
-       expected: "atom"
-     )}
-  end
-
-  defp validate_emphasis_kind(kind) when kind in [:asterisks, :underscores], do: {:ok, kind}
-
-  defp validate_emphasis_kind(kind) when is_atom(kind) do
-    {:error,
-     Error.validation_error("Invalid emphasis kind",
-       field: :emphasis_kind,
-       value: kind,
-       expected: ":asterisks or :underscores"
-     )}
-  end
-
-  defp validate_emphasis_kind(kind) do
-    {:error,
-     Error.validation_error("Emphasis kind must be an atom",
-       field: :emphasis_kind,
-       value: kind,
-       expected: "atom"
-     )}
-  end
-
-  defp validate_strong_kind(kind) when kind in [:asterisks, :underscores], do: {:ok, kind}
-
-  defp validate_strong_kind(kind) when is_atom(kind) do
-    {:error,
-     Error.validation_error("Invalid strong kind",
-       field: :strong_kind,
-       value: kind,
-       expected: ":asterisks or :underscores"
-     )}
-  end
-
-  defp validate_strong_kind(kind) do
-    {:error,
-     Error.validation_error("Strong kind must be an atom",
-       field: :strong_kind,
-       value: kind,
-       expected: "atom"
-     )}
-  end
-
-  defp validate_new_line_kind(kind) when kind in [:auto, :lf, :crlf], do: {:ok, kind}
-
-  defp validate_new_line_kind(kind) when is_atom(kind) do
-    {:error,
-     Error.validation_error("Invalid new line kind",
-       field: :new_line_kind,
-       value: kind,
-       expected: ":auto, :lf, or :crlf"
-     )}
-  end
-
-  defp validate_new_line_kind(kind) do
-    {:error,
-     Error.validation_error("New line kind must be an atom",
-       field: :new_line_kind,
-       value: kind,
-       expected: "atom"
-     )}
-  end
-
-  defp validate_unordered_list_kind(kind) when kind in [:dashes, :asterisks], do: {:ok, kind}
-
-  defp validate_unordered_list_kind(kind) when is_atom(kind) do
-    {:error,
-     Error.validation_error("Invalid unordered list kind",
-       field: :unordered_list_kind,
-       value: kind,
-       expected: ":dashes or :asterisks"
-     )}
-  end
-
-  defp validate_unordered_list_kind(kind) do
-    {:error,
-     Error.validation_error("Unordered list kind must be an atom",
-       field: :unordered_list_kind,
-       value: kind,
+     Error.validation_error(
+       "#{field |> Atom.to_string() |> String.replace("_", " ") |> String.capitalize()} must be an atom",
+       field: field,
+       value: value,
        expected: "atom"
      )}
   end

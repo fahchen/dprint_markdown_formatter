@@ -108,8 +108,8 @@ defmodule DprintMarkdownFormatter.Config do
   @doc """
   Merges a configuration struct with runtime options.
 
-  Runtime options take precedence over configuration values. Only valid
-  options are merged; invalid options are ignored with a warning.
+  Runtime options take precedence over configuration values. Only valid options
+  are merged; invalid options are ignored with a warning.
 
   ## Examples
 
@@ -140,8 +140,8 @@ defmodule DprintMarkdownFormatter.Config do
   @doc """
   Returns a map with only the dprint-related fields for the NIF.
 
-  Excludes format_module_attributes which is only used by Elixir code.
-  This map is passed directly to the Rust NIF for formatting.
+  Excludes format_module_attributes which is only used by Elixir code. This map is
+  passed directly to the Rust NIF for formatting.
 
   ## Examples
 

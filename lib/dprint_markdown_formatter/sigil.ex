@@ -8,7 +8,8 @@ defmodule DprintMarkdownFormatter.Sigil do
 
   ## Key Features
 
-  - **Automatic formatting**: Extra spaces, inconsistent list styles, and other formatting issues are corrected
+  - **Automatic formatting**: Extra spaces, inconsistent list styles, and other
+    formatting issues are corrected
   - **Configuration-aware**: Uses the same configuration as the main formatter
   - **Compile-time processing**: Formatting happens when the sigil is evaluated
   - **Error handling**: Falls back gracefully if formatting fails
@@ -43,7 +44,8 @@ defmodule DprintMarkdownFormatter.Sigil do
 
   ## Modifiers
 
-  The ~M sigil ignores all modifiers and always returns the formatted markdown string.
+  The ~M sigil ignores all modifiers and always returns the formatted markdown
+  string.
   """
 
   @doc """
@@ -84,8 +86,8 @@ defmodule DprintMarkdownFormatter.Sigil do
   ## Error Handling
 
   The underlying `DprintMarkdownFormatter.format/2` function handles errors
-  gracefully and returns the original content if formatting fails, ensuring
-  your code continues to work even if there are formatting issues.
+  gracefully and returns the original content if formatting fails, ensuring your
+  code continues to work even if there are formatting issues.
   """
   @spec sigil_M(binary(), list()) :: binary()
   def sigil_M(markdown, _modifiers) when is_binary(markdown) do

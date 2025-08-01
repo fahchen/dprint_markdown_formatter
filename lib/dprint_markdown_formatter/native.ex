@@ -27,13 +27,13 @@ defmodule DprintMarkdownFormatter.Native do
   @typep unordered_list_kind_option() :: :dashes | :asterisks
 
   @typep format_options() :: %{
-          line_width: pos_integer(),
-          text_wrap: text_wrap_option(),
-          emphasis_kind: emphasis_kind_option(),
-          strong_kind: strong_kind_option(),
-          new_line_kind: new_line_kind_option(),
-          unordered_list_kind: unordered_list_kind_option()
-        }
+           line_width: pos_integer(),
+           text_wrap: text_wrap_option(),
+           emphasis_kind: emphasis_kind_option(),
+           strong_kind: strong_kind_option(),
+           new_line_kind: new_line_kind_option(),
+           unordered_list_kind: unordered_list_kind_option()
+         }
 
   @doc """
   Formats markdown text with configurable options.

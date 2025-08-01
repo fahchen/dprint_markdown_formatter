@@ -17,7 +17,8 @@ defmodule DprintMarkdownFormatter.MixProject do
       docs: docs(),
       dprint_markdown_formatter: [
         line_width: 80,
-        text_wrap: "always"
+        text_wrap: "always",
+        format_module_attributes: true
       ]
     ]
   end
@@ -45,7 +46,8 @@ defmodule DprintMarkdownFormatter.MixProject do
 
   defp package do
     [
-      description: "A fast, configurable markdown formatter for Elixir using Rust's dprint-plugin-markdown",
+      description:
+        "A fast, configurable markdown formatter for Elixir using Rust's dprint-plugin-markdown",
       files: [
         "lib",
         "native",
@@ -82,15 +84,15 @@ defmodule DprintMarkdownFormatter.MixProject do
       source_ref: "v#{@version}",
       extras: ["README.md", "llms.txt"],
       groups_for_modules: [
-        "Core": [
+        Core: [
           DprintMarkdownFormatter,
           DprintMarkdownFormatter.Config,
           DprintMarkdownFormatter.Error
         ],
-        "Sigil": [
+        Sigil: [
           DprintMarkdownFormatter.Sigil
         ],
-        "Internal": [
+        Internal: [
           DprintMarkdownFormatter.Native,
           DprintMarkdownFormatter.Validator
         ]
