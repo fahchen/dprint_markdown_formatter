@@ -195,27 +195,26 @@ defmodule DprintMarkdownFormatter do
   # Private helpers
 
   defp determine_content_type(opts) do
-    content_type =
-      cond do
-        Keyword.has_key?(opts, :sigil) ->
-          :sigil
-
-        Keyword.get(opts, :extension) in [".ex", ".exs"] ->
-          :elixir_source
-
-        Keyword.get(opts, :extension) in [".md", ".markdown"] ->
-          :markdown
-
-        true ->
-          :markdown
-      end
-
+    content_type = determine_content_type_from_opts(opts)
     {:ok, content_type}
   end
 
-  defp do_format(:markdown, contents, opts), do: format_markdown(contents, opts)
-  defp do_format(:elixir_source, contents, opts), do: format_elixir_source(contents, opts)
-  defp do_format(:sigil, contents, opts), do: format_sigil(contents, opts)
+  defp determine_content_type_from_opts(opts) do
+    case {Keyword.has_key?(opts, :sigil), Keyword.get(opts, :extension)} do
+      {true, _ext} -> :sigil
+      {false, ext} when ext in [".ex", ".exs"] -> :elixir_source
+      {false, ext} when ext in [".md", ".markdown"] -> :markdown
+      {false, _ext} -> :markdown
+    end
+  end
+
+  defp do_format(content_type, contents, opts) do
+    case content_type do
+      :markdown -> format_markdown(contents, opts)
+      :elixir_source -> format_elixir_source(contents, opts)
+      :sigil -> format_sigil(contents, opts)
+    end
+  end
 
   defp format_markdown(contents, opts) do
     with {:ok, config} <- get_config(),
@@ -223,7 +222,8 @@ defmodule DprintMarkdownFormatter do
          {:ok, formatted} <- call_nif(contents, merged_config) do
       {:ok, formatted}
     else
-      {:error, error} -> {:error, error}
+      {:error, _error} = error_result ->
+        error_result
     end
   end
 
@@ -248,8 +248,6 @@ defmodule DprintMarkdownFormatter do
         [] -> {:ok, ""}
         formatted -> {:ok, IO.iodata_to_binary([formatted, ?\n])}
       end
-    else
-      {:error, error} -> {:error, error}
     end
   end
 
