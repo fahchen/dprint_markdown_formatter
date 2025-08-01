@@ -94,6 +94,12 @@ defmodule DprintMarkdownFormatter do
   alias DprintMarkdownFormatter.Error
   alias DprintMarkdownFormatter.Validator
 
+  # Dprint-specific configuration options (derived from Config struct fields plus Mix format options)
+  @dprint_opts Config.__struct__()
+               |> Map.from_struct()
+               |> Map.keys()
+               |> Kernel.++([:extension, :sigil])
+
   @doc """
   Returns the features supported by this formatter plugin.
 
@@ -244,7 +250,10 @@ defmodule DprintMarkdownFormatter do
          doc_attributes <- Config.resolve_module_attributes(merged_config),
          {:ok, formatted_content} <-
            format_module_attributes(contents, doc_attributes, merged_config) do
-      case Code.format_string!(formatted_content, opts) do
+      # Remove dprint options to pass only valid Elixir formatter options
+      elixir_opts = Keyword.drop(opts, @dprint_opts)
+
+      case Code.format_string!(formatted_content, elixir_opts) do
         [] -> {:ok, ""}
         formatted -> {:ok, IO.iodata_to_binary([formatted, ?\n])}
       end
@@ -263,23 +272,12 @@ defmodule DprintMarkdownFormatter do
   defp merge_runtime_options(config, opts) do
     case Validator.validate_config(config) do
       {:ok, validated_config} ->
-        try do
-          {runtime_dprint_opts, _format_opts} =
-            Keyword.split(opts, [
-              :line_width,
-              :text_wrap,
-              :emphasis_kind,
-              :strong_kind,
-              :new_line_kind,
-              :unordered_list_kind
-            ])
+        # Only runtime dprint options (exclude format_module_attributes which is not a runtime option)
+        runtime_dprint_keys = @dprint_opts -- [:format_module_attributes, :extension, :sigil]
+        {runtime_dprint_opts, _format_opts} = Keyword.split(opts, runtime_dprint_keys)
 
-          merged_config = Config.merge(validated_config, runtime_dprint_opts)
-          Validator.validate_config(merged_config)
-        rescue
-          error ->
-            {:error, Error.config_error("Failed to merge runtime options", original_error: error)}
-        end
+        merged_config = Config.merge(validated_config, runtime_dprint_opts)
+        Validator.validate_config(merged_config)
 
       {:error, error} ->
         {:error, error}

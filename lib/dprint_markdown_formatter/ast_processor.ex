@@ -59,9 +59,12 @@ defmodule DprintMarkdownFormatter.AstProcessor do
   @spec collect_patches_for_doc_attributes(ast(), [atom()], Config.t()) ::
           {:ok, patches()} | {:error, Exception.t()}
   def collect_patches_for_doc_attributes(ast, doc_attributes, config) do
+    # Convert config to NIF format once at the entry point
+    nif_config = Config.to_nif_config(config)
+
     {_updated_ast, patches} =
       Macro.postwalk(ast, [], fn node, acc ->
-        process_node_for_patches(node, doc_attributes, config, acc)
+        process_node_for_patches(node, doc_attributes, nif_config, acc)
       end)
 
     {:ok, patches}
@@ -75,8 +78,8 @@ defmodule DprintMarkdownFormatter.AstProcessor do
   Identifies module attribute nodes that match the target attributes and contain
   markdown content, then creates appropriate patches.
   """
-  @spec process_node_for_patches(ast(), [atom()], Config.t(), patches()) :: {ast(), patches()}
-  def process_node_for_patches(node, doc_attributes, config, acc) do
+  @spec process_node_for_patches(ast(), [atom()], map(), patches()) :: {ast(), patches()}
+  def process_node_for_patches(node, doc_attributes, nif_config, acc) do
     case node do
       # Handle both heredoc and simple string patterns: @moduledoc """content""" or @moduledoc "content"
       {:@, _meta, [{attr, _attr_meta, [{:__block__, block_meta, [doc_content]} = string_node]}]}
@@ -88,7 +91,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
           string_node,
           block_meta,
           doc_attributes,
-          config,
+          nif_config,
           acc
         )
 
@@ -126,11 +129,11 @@ defmodule DprintMarkdownFormatter.AstProcessor do
          string_node,
          block_meta,
          doc_attributes,
-         config,
+         nif_config,
          acc
        ) do
     if attr in doc_attributes do
-      case format_markdown_content(doc_content, config) do
+      case format_markdown_content(doc_content, nif_config) do
         {:ok, formatted} when formatted != doc_content ->
           create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc)
 
@@ -145,13 +148,8 @@ defmodule DprintMarkdownFormatter.AstProcessor do
     end
   end
 
-  defp format_markdown_content(content, config) do
-    nif_config = Config.to_nif_config(config)
-
-    # Clean up content by removing leading indentation and normalizing empty lines
-    clean_content = content
-
-    case DprintMarkdownFormatter.Native.format_markdown(clean_content, nif_config) do
+  defp format_markdown_content(content, nif_config) do
+    case DprintMarkdownFormatter.Native.format_markdown(content, nif_config) do
       {:ok, formatted} ->
         # For heredocs, remove the trailing newline that dprint adds
         # The heredoc structure will handle proper formatting

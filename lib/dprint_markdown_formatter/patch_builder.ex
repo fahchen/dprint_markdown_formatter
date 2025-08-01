@@ -51,8 +51,7 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
   def build_simple_string_replacement(formatted) do
     if String.contains?(formatted, "\n") do
       # Convert to heredoc if content becomes multi-line
-      indented_content = formatted
-      "\"\"\"\n#{indented_content}\n\"\"\""
+      "\"\"\"\n#{formatted}\n\"\"\""
     else
       # Keep as simple string
       "\"#{formatted}\""
@@ -75,8 +74,6 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
   @spec build_heredoc_replacement(String.t()) :: String.t()
   def build_heredoc_replacement(formatted) do
     # Heredoc format - preserve as heredoc
-    indented_content = formatted
-
-    "\"\"\"\n#{indented_content}\n\"\"\""
+    "\"\"\"\n#{formatted}\n\"\"\""
   end
 end
