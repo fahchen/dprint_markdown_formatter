@@ -89,9 +89,9 @@ defmodule DprintMarkdownFormatter do
 
   require Logger
 
+  alias DprintMarkdownFormatter.AstProcessor
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
-  alias DprintMarkdownFormatter.StringUtils
   alias DprintMarkdownFormatter.Validator
 
   @doc """
@@ -301,147 +301,13 @@ defmodule DprintMarkdownFormatter do
   end
 
   defp format_module_attributes(content, doc_attributes, config) do
-    with {:ok, ast} <- parse_elixir_source(content),
-         {:ok, patches} <- collect_patches_for_doc_attributes(ast, doc_attributes, config),
-         {:ok, patched_content} <- apply_patches(content, patches) do
+    with {:ok, ast} <- AstProcessor.parse_elixir_source(content),
+         {:ok, patches} <-
+           AstProcessor.collect_patches_for_doc_attributes(ast, doc_attributes, config),
+         {:ok, patched_content} <- AstProcessor.apply_patches(content, patches) do
       {:ok, patched_content}
     else
       {:error, error} -> {:error, error}
-    end
-  end
-
-  defp parse_elixir_source(content) do
-    case Sourceror.parse_string(content) do
-      {:ok, ast} ->
-        {:ok, ast}
-
-      {:error, error} ->
-        {:error, Error.parse_error("Failed to parse Elixir source", original_error: error)}
-    end
-  end
-
-  defp apply_patches(content, patches) do
-    patched_content =
-      content
-      |> Sourceror.patch_string(patches)
-      |> StringUtils.final_cleanup_whitespace()
-
-    {:ok, patched_content}
-  rescue
-    error -> {:error, Error.format_error("Failed to apply patches", original_error: error)}
-  end
-
-  defp collect_patches_for_doc_attributes(ast, doc_attributes, config) do
-    {_updated_ast, patches} =
-      Macro.postwalk(ast, [], fn node, acc ->
-        process_node_for_patches(node, doc_attributes, config, acc)
-      end)
-
-    {:ok, patches}
-  rescue
-    error -> {:error, Error.format_error("Failed to collect patches", original_error: error)}
-  end
-
-  defp process_node_for_patches(node, doc_attributes, config, acc) do
-    case node do
-      # Handle both heredoc and simple string patterns: @moduledoc """content""" or @moduledoc "content"
-      {:@, _meta, [{attr, _attr_meta, [{:__block__, block_meta, [doc_content]} = string_node]}]}
-      when is_atom(attr) and is_binary(doc_content) ->
-        process_doc_attribute(
-          node,
-          attr,
-          doc_content,
-          string_node,
-          block_meta,
-          doc_attributes,
-          config,
-          acc
-        )
-
-      _other_node ->
-        {node, acc}
-    end
-  end
-
-  defp process_doc_attribute(
-         node,
-         attr,
-         doc_content,
-         string_node,
-         block_meta,
-         doc_attributes,
-         config,
-         acc
-       ) do
-    if attr in doc_attributes do
-      case format_markdown_content(doc_content, config) do
-        {:ok, formatted} when formatted != doc_content ->
-          create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc)
-
-        {:ok, _unchanged} ->
-          {node, acc}
-
-        {:error, _error} ->
-          {node, acc}
-      end
-    else
-      {node, acc}
-    end
-  end
-
-  defp create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc) do
-    range = Sourceror.get_range(string_node)
-    delimiter = block_meta[:delimiter] || "\"\"\""
-    replacement = build_replacement_string(formatted, delimiter)
-
-    patch = %Sourceror.Patch{
-      range: range,
-      change: replacement
-    }
-
-    {node, [patch | acc]}
-  end
-
-  defp build_replacement_string(formatted, delimiter) do
-    if delimiter == "\"" do
-      build_simple_string_replacement(formatted)
-    else
-      build_heredoc_replacement(formatted)
-    end
-  end
-
-  defp build_simple_string_replacement(formatted) do
-    if String.contains?(formatted, "\n") do
-      # Convert to heredoc if content becomes multi-line
-      indented_content = formatted
-      "\"\"\"\n#{indented_content}\n\"\"\""
-    else
-      # Keep as simple string
-      "\"#{formatted}\""
-    end
-  end
-
-  defp build_heredoc_replacement(formatted) do
-    # Heredoc format - preserve as heredoc
-    indented_content = formatted
-
-    "\"\"\"\n#{indented_content}\n\"\"\""
-  end
-
-  defp format_markdown_content(content, config) do
-    nif_config = Config.to_nif_config(config)
-
-    # Clean up content by removing leading indentation and normalizing empty lines
-    clean_content = content
-
-    case DprintMarkdownFormatter.Native.format_markdown(clean_content, nif_config) do
-      {:ok, formatted} ->
-        # For heredocs, remove the trailing newline that dprint adds
-        # The heredoc structure will handle proper formatting
-        {:ok, String.trim_trailing(formatted, "\n")}
-
-      {:error, reason} ->
-        {:error, Error.nif_error("Failed to format markdown content", original_error: reason)}
     end
   end
 end
