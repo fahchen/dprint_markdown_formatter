@@ -95,6 +95,30 @@ defmodule DprintMarkdownFormatter.AstProcessor do
           acc
         )
 
+      # Handle sigil patterns: @moduledoc ~S"""content""" or @moduledoc ~s/content/
+      {:@, _meta,
+       [
+         {attr, _attr_meta,
+          [
+            {sigil_type, sigil_meta,
+             [{:<<>>, _binary_meta, [doc_content]} = binary_node, _modifiers]} =
+                sigil_node
+          ]}
+       ]}
+      when is_atom(attr) and is_binary(doc_content) and sigil_type in [:sigil_S, :sigil_s] ->
+        process_sigil_doc_attribute(
+          node,
+          attr,
+          doc_content,
+          sigil_node,
+          binary_node,
+          sigil_type,
+          sigil_meta,
+          doc_attributes,
+          nif_config,
+          acc
+        )
+
       _other_node ->
         {node, acc}
     end
@@ -146,6 +170,70 @@ defmodule DprintMarkdownFormatter.AstProcessor do
     else
       {node, acc}
     end
+  end
+
+  defp process_sigil_doc_attribute(
+         node,
+         attr,
+         doc_content,
+         sigil_node,
+         binary_node,
+         sigil_type,
+         sigil_meta,
+         doc_attributes,
+         nif_config,
+         acc
+       ) do
+    if attr in doc_attributes do
+      case format_markdown_content(doc_content, nif_config) do
+        {:ok, formatted} when formatted != doc_content ->
+          create_patch_for_formatted_sigil_content(
+            node,
+            formatted,
+            sigil_node,
+            binary_node,
+            sigil_type,
+            sigil_meta,
+            acc
+          )
+
+        {:ok, _unchanged} ->
+          {node, acc}
+
+        {:error, _error} ->
+          {node, acc}
+      end
+    else
+      {node, acc}
+    end
+  end
+
+  defp create_patch_for_formatted_sigil_content(
+         node,
+         formatted,
+         sigil_node,
+         _binary_node,
+         sigil_type,
+         sigil_meta,
+         acc
+       ) do
+    range = Sourceror.get_range(sigil_node)
+    delimiter = sigil_meta[:delimiter] || "\"\"\""
+
+    sigil_prefix =
+      case sigil_type do
+        :sigil_S -> "~S"
+        :sigil_s -> "~s"
+      end
+
+    replacement = PatchBuilder.build_replacement_sigil_string(formatted, sigil_prefix, delimiter)
+
+    patch = %Sourceror.Patch{
+      range: range,
+      change: replacement
+    }
+
+    {node, [patch | acc]}
   end
 
   defp format_markdown_content(content, nif_config) do

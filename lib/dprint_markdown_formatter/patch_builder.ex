@@ -76,4 +76,70 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
     # Heredoc format - preserve as heredoc
     "\"\"\"\n#{formatted}\n\"\"\""
   end
+
+  @doc """
+  Builds a replacement string for sigil content, preserving the original sigil
+  type and delimiter.
+
+  Handles all supported sigil delimiters and maintains proper formatting for both
+  simple and heredoc-style sigils.
+
+  ## Examples
+
+      iex> DprintMarkdownFormatter.PatchBuilder.build_replacement_sigil_string("Hello", "~S", "\\"")
+      "~S\\"Hello\\""
+
+      iex> DprintMarkdownFormatter.PatchBuilder.build_replacement_sigil_string("Hello\\nWorld", "~S", "\\"\\"\\\"")
+      "~S\\"\\"\\\"\\nHello\\nWorld\\n\\"\\"\\""
+
+      iex> DprintMarkdownFormatter.PatchBuilder.build_replacement_sigil_string("Hello", "~s", "/")
+      "~s/Hello/"
+  """
+  @spec build_replacement_sigil_string(String.t(), String.t(), String.t()) :: String.t()
+  def build_replacement_sigil_string(formatted, sigil_prefix, delimiter) do
+    case delimiter do
+      "\"\"\"" ->
+        # Heredoc sigil - format exactly like regular heredocs
+        # Match expected format: newline after closing delimiter
+        "#{sigil_prefix}\"\"\"\n#{formatted}\n\"\"\"\n"
+
+      "'''" ->
+        # Triple single quote heredoc - same as triple double quotes
+        # Match expected format: newline after closing delimiter
+        "#{sigil_prefix}'''\n#{formatted}\n'''\n"
+
+      single_delimiter when single_delimiter in ["\"", "'", "/", "|", "(", "[", "{", "<"] ->
+        # Single character delimiters - preserve original delimiter structure
+        closing_delimiter = get_closing_delimiter(single_delimiter)
+
+        # For simple delimiters, match the expected format precisely
+        # Single-line sigils should not have trailing newline
+        # Multi-line sigils should have newline after closing delimiter
+        has_newlines = String.contains?(formatted, "\n")
+
+        if has_newlines do
+          # Multi-line content needs newline after closing delimiter
+          "#{sigil_prefix}#{single_delimiter}\n#{formatted}\n#{closing_delimiter}\n"
+        else
+          # Single-line content - no trailing newline
+          "#{sigil_prefix}#{single_delimiter}#{formatted}#{closing_delimiter}"
+        end
+
+      _ ->
+        # Fallback to heredoc for unknown delimiters
+        "#{sigil_prefix}\"\"\"\n#{formatted}\n\"\"\"\n"
+    end
+  end
+
+  # Private helper to get the closing delimiter for bracket-style delimiters
+  defp get_closing_delimiter(opening) do
+    case opening do
+      "(" -> ")"
+      "[" -> "]"
+      "{" -> "}"
+      "<" -> ">"
+      # For quotes, slashes, pipes - closing is same as opening
+      other -> other
+    end
+  end
 end
