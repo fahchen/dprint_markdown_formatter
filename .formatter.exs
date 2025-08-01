@@ -2,9 +2,6 @@
 [
   plugins: [DprintMarkdownFormatter],
   import_deps: [:typed_structor],
-  locals_without_parens: [
-    custom_function: 1
-  ],
   inputs: [
     "{mix,.formatter}.exs",
     "{config,lib}/**/*.{ex,exs}",

@@ -90,6 +90,7 @@ defmodule DprintMarkdownFormatter do
 
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
+  alias DprintMarkdownFormatter.StringUtils
   alias DprintMarkdownFormatter.Validator
 
   @doc """
@@ -241,7 +242,10 @@ defmodule DprintMarkdownFormatter do
          doc_attributes <- Config.resolve_module_attributes(merged_config),
          {:ok, formatted_content} <-
            format_module_attributes(contents, doc_attributes, merged_config) do
-      {:ok, formatted_content}
+      case Code.format_string!(formatted_content, opts) do
+        [] -> {:ok, ""}
+        formatted -> {:ok, IO.iodata_to_binary([formatted, ?\n])}
+      end
     else
       {:error, error} -> {:error, error}
     end
@@ -318,7 +322,7 @@ defmodule DprintMarkdownFormatter do
     patched_content =
       content
       |> Sourceror.patch_string(patches)
-      |> final_cleanup_whitespace()
+      |> StringUtils.final_cleanup_whitespace()
 
     {:ok, patched_content}
   rescue
@@ -407,7 +411,7 @@ defmodule DprintMarkdownFormatter do
   defp build_simple_string_replacement(formatted) do
     if String.contains?(formatted, "\n") do
       # Convert to heredoc if content becomes multi-line
-      indented_content = indent_content_for_heredoc(formatted)
+      indented_content = formatted
       "\"\"\"\n#{indented_content}\n\"\"\""
     else
       # Keep as simple string
@@ -417,33 +421,16 @@ defmodule DprintMarkdownFormatter do
 
   defp build_heredoc_replacement(formatted) do
     # Heredoc format - preserve as heredoc
-    indented_content =
-      formatted
-      # Clean empty lines before indenting
-      |> clean_empty_lines()
-      |> indent_content_for_heredoc()
+    indented_content = formatted
 
     "\"\"\"\n#{indented_content}\n\"\"\""
-  end
-
-  defp indent_content_for_heredoc(content) do
-    # Keep content without additional indentation for heredoc
-    content
-    |> String.split("\n")
-    |> Enum.map_join("\n", fn line ->
-      if String.trim(line) == "" do
-        ""
-      else
-        line
-      end
-    end)
   end
 
   defp format_markdown_content(content, config) do
     nif_config = Config.to_nif_config(config)
 
     # Clean up content by removing leading indentation and normalizing empty lines
-    clean_content = normalize_heredoc_content(content)
+    clean_content = content
 
     case DprintMarkdownFormatter.Native.format_markdown(clean_content, nif_config) do
       {:ok, formatted} ->
@@ -453,63 +440,6 @@ defmodule DprintMarkdownFormatter do
 
       {:error, reason} ->
         {:error, Error.nif_error("Failed to format markdown content", original_error: reason)}
-    end
-  end
-
-  defp final_cleanup_whitespace(content) do
-    # Final pass to clean up any remaining whitespace-only lines in heredocs
-    # This catches cases where Sourceror or intermediate processing leaves trailing spaces
-    String.replace(content, ~r/^[ \t]+$/m, "")
-  end
-
-  defp clean_empty_lines(content) do
-    # Use regex to replace any line that contains only whitespace with an empty line
-    String.replace(content, ~r/^[ \t]+$/m, "")
-  end
-
-  defp normalize_heredoc_content(content) do
-    # Simple approach: split lines, find common indentation, remove it
-    lines = String.split(content, "\n")
-
-    # Filter out empty lines to find minimum indentation
-    content_lines = Enum.reject(lines, &(String.trim(&1) == ""))
-
-    if Enum.empty?(content_lines) do
-      ""
-    else
-      # Find the minimum number of leading spaces
-      min_spaces =
-        content_lines
-        |> Enum.map(fn line ->
-          leading_spaces = String.length(line) - String.length(String.trim_leading(line, " "))
-          leading_spaces
-        end)
-        |> Enum.min()
-
-      # Remove that many spaces from the beginning of each line
-      Enum.map_join(lines, "\n", fn line ->
-        process_line_for_normalization(line, min_spaces)
-      end)
-    end
-  end
-
-  defp process_line_for_normalization(line, min_spaces) do
-    # Always check if line is empty first, regardless of spaces
-    if String.trim(line) == "" do
-      ""
-    else
-      # Remove min_spaces from the start, but don't go past the line length
-      spaces_to_remove =
-        min(min_spaces, String.length(line) - String.length(String.trim_leading(line, " ")))
-
-      processed_line = String.slice(line, spaces_to_remove..-1//1)
-
-      # If the line becomes empty or contains only whitespace after processing, make it truly empty
-      if String.trim(processed_line) == "" do
-        ""
-      else
-        processed_line
-      end
     end
   end
 end

@@ -345,7 +345,7 @@ defmodule DprintMarkdownFormatterTest do
       # Header with spaces
       """
 
-      IO.puts "Hello"
+      IO.puts("Hello")
       '''
 
       result = DprintMarkdownFormatter.format(input, extension: ".exs")
@@ -374,6 +374,42 @@ defmodule DprintMarkdownFormatterTest do
   end
 
   describe "module attribute formatting" do
+    test "handles heavily indented heredoc content correctly" do
+      # This test specifically checks if normalization is needed
+      input = ~S'''
+      defmodule Example do
+        @moduledoc """
+        # Header   with   spaces
+
+        This is   a   paragraph   with   irregular   spacing.
+
+        * Item 1
+        * Item 2
+            * Nested item 1
+            * Nested item 2
+        """
+      end
+      '''
+
+      expected = ~S'''
+      defmodule Example do
+        @moduledoc """
+        # Header with spaces
+
+        This is a paragraph with irregular spacing.
+
+        - Item 1
+        - Item 2
+          - Nested item 1
+          - Nested item 2
+        """
+      end
+      '''
+
+      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+      assert result == expected
+    end
+
     test "formats @moduledoc heredoc correctly" do
       input = ~S'''
       defmodule Example do
@@ -672,7 +708,14 @@ defmodule DprintMarkdownFormatterTest do
       end
       '''
 
-      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+      result =
+        DprintMarkdownFormatter.format(input,
+          extension: ".ex",
+          locals_without_parens: [
+            custom_function: 1
+          ]
+        )
+
       assert result == expected
     end
 
@@ -1181,7 +1224,13 @@ defmodule DprintMarkdownFormatterTest do
       end
       '''
 
-      result = DprintMarkdownFormatter.format(input, extension: ".ex")
+      result =
+        DprintMarkdownFormatter.format(input,
+          extension: ".ex",
+          locals_without_parens: [
+            custom_function: 1
+          ]
+        )
 
       # The result should be the same as input since locals_without_parens should be respected
       # This test should fail because the elixir formatter doesn't respect locals_without_parens
