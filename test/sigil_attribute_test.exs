@@ -861,7 +861,6 @@ defmodule DprintMarkdownFormatter.SigilAttributeTest do
 
     input
     |> String.split("\n")
-    |> Enum.map(&String.trim_leading(&1, leading_spaces))
-    |> Enum.join("\n")
+    |> Enum.map_join("\n", &String.trim_leading(&1, leading_spaces))
   end
 end

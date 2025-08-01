@@ -125,7 +125,7 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
           "#{sigil_prefix}#{single_delimiter}#{formatted}#{closing_delimiter}"
         end
 
-      _ ->
+      _unknown_delimiter ->
         # Fallback to heredoc for unknown delimiters
         "#{sigil_prefix}\"\"\"\n#{formatted}\n\"\"\"\n"
     end

@@ -110,10 +110,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
           node,
           attr,
           doc_content,
-          sigil_node,
-          binary_node,
-          sigil_type,
-          sigil_meta,
+          %{sigil: sigil_node, binary: binary_node, type: sigil_type, meta: sigil_meta},
           doc_attributes,
           nif_config,
           acc
@@ -176,10 +173,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
          node,
          attr,
          doc_content,
-         sigil_node,
-         binary_node,
-         sigil_type,
-         sigil_meta,
+         %{sigil: sigil_node, binary: binary_node, type: sigil_type, meta: sigil_meta},
          doc_attributes,
          nif_config,
          acc
@@ -218,7 +212,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
          acc
        ) do
     range = Sourceror.get_range(sigil_node)
-    delimiter = sigil_meta[:delimiter] || "\"\"\""
+    delimiter = sigil_meta[:delimiter]
 
     sigil_prefix =
       case sigil_type do
