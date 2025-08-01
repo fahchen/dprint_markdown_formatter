@@ -50,12 +50,15 @@ defmodule DprintMarkdownFormatter.MixProject do
         "A fast, configurable markdown formatter for Elixir using Rust's dprint-plugin-markdown",
       files: [
         "lib",
-        "native",
-        "checksum-*.exs",
+        ".formatter.exs",
         "mix.exs",
         "README.md",
         "LICENSE",
-        "llms.txt"
+        "llms.txt",
+        "native/dprint_markdown_formatter/*.*",
+        "native/dprint_markdown_formatter/.cargo/",
+        "native/dprint_markdown_formatter/src/",
+        "checksum-*.exs"
       ],
       maintainers: ["Phil Chen"],
       licenses: ["MIT"],
