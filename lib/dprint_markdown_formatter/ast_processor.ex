@@ -9,6 +9,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
 
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
+  alias DprintMarkdownFormatter.PatchBuilder
   alias DprintMarkdownFormatter.StringUtils
 
   @typep ast :: Macro.t()
@@ -106,7 +107,7 @@ defmodule DprintMarkdownFormatter.AstProcessor do
   def create_patch_for_formatted_content(node, formatted, string_node, block_meta, acc) do
     range = Sourceror.get_range(string_node)
     delimiter = block_meta[:delimiter] || "\"\"\""
-    replacement = build_replacement_string(formatted, delimiter)
+    replacement = PatchBuilder.build_replacement_string(formatted, delimiter)
 
     patch = %Sourceror.Patch{
       range: range,
@@ -142,32 +143,6 @@ defmodule DprintMarkdownFormatter.AstProcessor do
     else
       {node, acc}
     end
-  end
-
-  defp build_replacement_string(formatted, delimiter) do
-    if delimiter == "\"" do
-      build_simple_string_replacement(formatted)
-    else
-      build_heredoc_replacement(formatted)
-    end
-  end
-
-  defp build_simple_string_replacement(formatted) do
-    if String.contains?(formatted, "\n") do
-      # Convert to heredoc if content becomes multi-line
-      indented_content = formatted
-      "\"\"\"\n#{indented_content}\n\"\"\""
-    else
-      # Keep as simple string
-      "\"#{formatted}\""
-    end
-  end
-
-  defp build_heredoc_replacement(formatted) do
-    # Heredoc format - preserve as heredoc
-    indented_content = formatted
-
-    "\"\"\"\n#{indented_content}\n\"\"\""
   end
 
   defp format_markdown_content(content, config) do
