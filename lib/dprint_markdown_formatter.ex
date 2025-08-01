@@ -159,10 +159,9 @@ defmodule DprintMarkdownFormatter do
   """
   @spec format_with_errors(String.t(), keyword()) :: {:ok, String.t()} | {:error, Error.t()}
   def format_with_errors(contents, opts) when is_binary(contents) and is_list(opts) do
-    with {:ok, validated_contents} <- Validator.validate_content(contents),
-         {:ok, validated_opts} <- Validator.validate_options(opts),
+    with {:ok, validated_opts} <- Validator.validate_options(opts),
          {:ok, content_type} <- determine_content_type(validated_opts),
-         {:ok, formatted} <- do_format(content_type, validated_contents, validated_opts) do
+         {:ok, formatted} <- do_format(content_type, contents, validated_opts) do
       {:ok, formatted}
     else
       {:error, _error} = error_result ->
