@@ -6,6 +6,8 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
   replacements, supporting both simple strings and heredoc formats.
   """
 
+  @single_char_delimiters ["\"", "'", "/", "|", "(", "[", "{", "<"]
+
   @doc """
   Builds a replacement string for formatted content based on the original
   delimiter.
@@ -100,15 +102,13 @@ defmodule DprintMarkdownFormatter.PatchBuilder do
     case delimiter do
       "\"\"\"" ->
         # Heredoc sigil - format exactly like regular heredocs
-        # Match expected format: newline after closing delimiter
         "#{sigil_prefix}\"\"\"\n#{formatted}\n\"\"\"\n"
 
       "'''" ->
         # Triple single quote heredoc - same as triple double quotes
-        # Match expected format: newline after closing delimiter
         "#{sigil_prefix}'''\n#{formatted}\n'''\n"
 
-      single_delimiter when single_delimiter in ["\"", "'", "/", "|", "(", "[", "{", "<"] ->
+      single_delimiter when single_delimiter in @single_char_delimiters ->
         # Single character delimiters - preserve original delimiter structure
         closing_delimiter = get_closing_delimiter(single_delimiter)
 
