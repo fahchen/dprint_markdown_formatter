@@ -25,7 +25,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dprint_markdown_formatter, "~> 0.4.0"}
+    {:dprint_markdown_formatter, "~> 0.5.0"}
   ]
 end
 ```
