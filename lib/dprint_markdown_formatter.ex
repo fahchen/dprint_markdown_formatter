@@ -255,9 +255,14 @@ defmodule DprintMarkdownFormatter do
       # Remove dprint options to pass only valid Elixir formatter options
       elixir_opts = Keyword.drop(opts, @dprint_opts)
 
-      case Code.format_string!(formatted_content, elixir_opts) do
+      formatted =
+        formatted_content
+        |> Code.format_string!(elixir_opts)
+        |> IO.iodata_to_binary()
+
+      case formatted do
         "" -> {:ok, ""}
-        formatted -> {:ok, IO.iodata_to_binary([formatted, ?\n])}
+        _ -> {:ok, formatted <> "\n"}
       end
     end
   end
