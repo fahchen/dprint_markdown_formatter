@@ -23,6 +23,15 @@ defmodule DprintMarkdownFormatter.Config do
            heading_kind: atom()
          }
 
+  @atom_choices %{
+    text_wrap: [:always, :never, :maintain],
+    emphasis_kind: [:asterisks, :underscores],
+    strong_kind: [:asterisks, :underscores],
+    new_line_kind: [:auto, :lf, :crlf],
+    unordered_list_kind: [:dashes, :asterisks],
+    heading_kind: [:atx, :setext]
+  }
+
   typed_structor enforce: true do
     field :line_width, pos_integer(), default: 80
     field :text_wrap, text_wrap_option(), default: :always
@@ -223,89 +232,8 @@ defmodule DprintMarkdownFormatter.Config do
   defp validate_option(:line_width, value),
     do: {:error, "must be a positive integer, got: #{inspect(value)}"}
 
-  defp validate_option(:text_wrap, value) when value in [:always, :never, :maintain],
-    do: {:ok, value}
-
-  defp validate_option(:text_wrap, value) when is_binary(value) do
-    case value do
-      "always" -> {:ok, :always}
-      "never" -> {:ok, :never}
-      "maintain" -> {:ok, :maintain}
-      _invalid_value -> {:error, "must be :always, :never, or :maintain, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:text_wrap, value),
-    do: {:error, "must be :always, :never, or :maintain, got: #{inspect(value)}"}
-
-  defp validate_option(:emphasis_kind, value) when value in [:asterisks, :underscores],
-    do: {:ok, value}
-
-  defp validate_option(:emphasis_kind, value) when is_binary(value) do
-    case value do
-      "asterisks" -> {:ok, :asterisks}
-      "underscores" -> {:ok, :underscores}
-      _invalid_value -> {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:emphasis_kind, value),
-    do: {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-
-  defp validate_option(:strong_kind, value) when value in [:asterisks, :underscores],
-    do: {:ok, value}
-
-  defp validate_option(:strong_kind, value) when is_binary(value) do
-    case value do
-      "asterisks" -> {:ok, :asterisks}
-      "underscores" -> {:ok, :underscores}
-      _invalid_value -> {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:strong_kind, value),
-    do: {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-
-  defp validate_option(:new_line_kind, value) when value in [:auto, :lf, :crlf], do: {:ok, value}
-
-  defp validate_option(:new_line_kind, value) when is_binary(value) do
-    case value do
-      "auto" -> {:ok, :auto}
-      "lf" -> {:ok, :lf}
-      "crlf" -> {:ok, :crlf}
-      _invalid_value -> {:error, "must be :auto, :lf, or :crlf, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:new_line_kind, value),
-    do: {:error, "must be :auto, :lf, or :crlf, got: #{inspect(value)}"}
-
-  defp validate_option(:unordered_list_kind, value) when value in [:dashes, :asterisks],
-    do: {:ok, value}
-
-  defp validate_option(:unordered_list_kind, value) when is_binary(value) do
-    case value do
-      "dashes" -> {:ok, :dashes}
-      "asterisks" -> {:ok, :asterisks}
-      _invalid_value -> {:error, "must be :dashes or :asterisks, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:unordered_list_kind, value),
-    do: {:error, "must be :dashes or :asterisks, got: #{inspect(value)}"}
-
-  defp validate_option(:heading_kind, value) when value in [:atx, :setext], do: {:ok, value}
-
-  defp validate_option(:heading_kind, value) when is_binary(value) do
-    case value do
-      "atx" -> {:ok, :atx}
-      "setext" -> {:ok, :setext}
-      _invalid_value -> {:error, "must be :atx or :setext, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:heading_kind, value),
-    do: {:error, "must be :atx or :setext, got: #{inspect(value)}"}
+  defp validate_option(key, value) when is_map_key(@atom_choices, key),
+    do: validate_atom_choice(value, @atom_choices[key])
 
   defp validate_option(:format_module_attributes, nil), do: {:ok, nil}
   defp validate_option(:format_module_attributes, value) when is_boolean(value), do: {:ok, value}
@@ -323,4 +251,36 @@ defmodule DprintMarkdownFormatter.Config do
 
   defp validate_option(key, value),
     do: {:error, "unknown configuration option #{key} with value #{inspect(value)}"}
+
+  defp validate_atom_choice(value, choices) when is_atom(value) do
+    if value in choices,
+      do: {:ok, value},
+      else: {:error, format_choice_error(choices, value)}
+  end
+
+  defp validate_atom_choice(value, choices) when is_binary(value) do
+    case Enum.find(choices, &(Atom.to_string(&1) == value)) do
+      nil -> {:error, format_choice_error(choices, value)}
+      atom -> {:ok, atom}
+    end
+  end
+
+  defp validate_atom_choice(value, choices),
+    do: {:error, format_choice_error(choices, value)}
+
+  defp format_choice_error(choices, value),
+    do: "must be #{format_choices(choices)}, got: #{inspect(value)}"
+
+  defp format_choices(choices) do
+    inspected = Enum.map(choices, &inspect/1)
+
+    case inspected do
+      [a, b] ->
+        "#{a} or #{b}"
+
+      list ->
+        {butlast, [last]} = Enum.split(list, -1)
+        "#{Enum.join(butlast, ", ")}, or #{last}"
+    end
+  end
 end
