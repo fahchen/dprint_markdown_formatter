@@ -262,7 +262,7 @@ defmodule DprintMarkdownFormatter do
 
       case formatted do
         "" -> {:ok, ""}
-        _ -> {:ok, formatted <> "\n"}
+        _non_empty -> {:ok, formatted <> "\n"}
       end
     end
   end
