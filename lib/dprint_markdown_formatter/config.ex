@@ -77,6 +77,12 @@ defmodule DprintMarkdownFormatter.Config do
 
   Returns a validated configuration struct with proper type checking. Invalid
   values are replaced with defaults and warnings are logged.
+
+  ## Examples
+
+      # With valid configuration in mix.exs
+      DprintMarkdownFormatter.Config.load()
+      #=> %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
   """
   @spec load() :: t()
   def load do
