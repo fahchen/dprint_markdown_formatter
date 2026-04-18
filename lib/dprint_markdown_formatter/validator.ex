@@ -91,6 +91,7 @@ defmodule DprintMarkdownFormatter.Validator do
          {:ok, _strong_kind} <- validate_strong_kind(config.strong_kind),
          {:ok, _new_line_kind} <- validate_new_line_kind(config.new_line_kind),
          {:ok, _unordered_list_kind} <- validate_unordered_list_kind(config.unordered_list_kind),
+         {:ok, _heading_kind} <- validate_heading_kind(config.heading_kind),
          {:ok, _format_module_attributes} <-
            validate_format_module_attributes(config.format_module_attributes) do
       {:ok, config}
@@ -162,6 +163,7 @@ defmodule DprintMarkdownFormatter.Validator do
   defp validate_option_value(:strong_kind, value), do: validate_strong_kind(value)
   defp validate_option_value(:new_line_kind, value), do: validate_new_line_kind(value)
   defp validate_option_value(:unordered_list_kind, value), do: validate_unordered_list_kind(value)
+  defp validate_option_value(:heading_kind, value), do: validate_heading_kind(value)
   defp validate_option_value(:extension, value), do: validate_extension(value)
   defp validate_option_value(:sigil, value), do: validate_sigil(value)
 
@@ -206,6 +208,9 @@ defmodule DprintMarkdownFormatter.Validator do
 
   defp validate_unordered_list_kind(value),
     do: validate_atom_choice(value, :unordered_list_kind, [:dashes, :asterisks])
+
+  defp validate_heading_kind(value),
+    do: validate_atom_choice(value, :heading_kind, [:atx, :setext])
 
   defp validate_atom_choice(value, field, valid_choices) when is_atom(value) do
     if value in valid_choices do

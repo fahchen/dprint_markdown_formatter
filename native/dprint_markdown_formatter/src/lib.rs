@@ -11,6 +11,7 @@ rustler::atoms! {
     strong_kind,
     new_line_kind,
     unordered_list_kind,
+    heading_kind,
     always,
     never,
     maintain,
@@ -20,10 +21,12 @@ rustler::atoms! {
     lf,
     crlf,
     dashes,
+    atx,
+    setext,
 }
 
 /// Simple NIF function that receives a config map from Elixir
-/// The map contains only the 6 dprint-related fields (no format_module_attributes)
+/// The map contains only the 7 dprint-related fields (no format_module_attributes)
 /// Elixir is the single source of truth for configuration validation
 #[rustler::nif]
 fn format_markdown(text: String, config: HashMap<Atom, Term>) -> Result<String, String> {
@@ -55,6 +58,7 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
     let strong_kind = build_strong_kind(&map)?;
     let new_line_kind = build_new_line_kind(&map)?;
     let unordered_list_kind = build_unordered_list_kind(&map)?;
+    let heading_kind = build_heading_kind(&map)?;
 
     Ok(Configuration {
         line_width,
@@ -63,11 +67,30 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
         strong_kind,
         new_line_kind,
         unordered_list_kind,
+        heading_kind,
+        tags: HashMap::new(),
         ignore_directive: "dprint-ignore".to_string(),
         ignore_start_directive: "dprint-ignore-start".to_string(),
         ignore_end_directive: "dprint-ignore-end".to_string(),
         ignore_file_directive: "dprint-ignore-file".to_string(),
     })
+}
+
+/// Build heading kind configuration from config map
+fn build_heading_kind(
+    map: &HashMap<Atom, Term>,
+) -> Result<dprint_plugin_markdown::configuration::HeadingKind, String> {
+    let kind_atom = map
+        .get(&heading_kind())
+        .ok_or("Missing heading_kind")?
+        .decode::<Atom>()
+        .map_err(|_| "Invalid heading_kind")?;
+
+    match kind_atom {
+        atom if atom == atx() => Ok(dprint_plugin_markdown::configuration::HeadingKind::Atx),
+        atom if atom == setext() => Ok(dprint_plugin_markdown::configuration::HeadingKind::Setext),
+        _ => Err("Invalid heading_kind value".to_string()),
+    }
 }
 
 /// Build text wrap configuration from config map

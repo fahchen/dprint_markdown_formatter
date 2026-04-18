@@ -42,9 +42,11 @@ defmodule DprintMarkdownFormatter do
     `:auto`)
   - `:unordered_list_kind` - Unordered list style: `:dashes`, `:asterisks`
     (default: `:dashes`)
+  - `:heading_kind` - Heading style for level 1/2 headings: `:atx` (`#`/`##`),
+    `:setext` (`===`/`---`) (default: `:atx`)
 
   **Note:** Configuration values can be provided as atoms (`:never`) or strings
-  (`"never"`). Atoms are preferred for consistency with Elixir conventions.
+  (`"never"`) via `mix.exs`. Runtime options passed to `format/2` must be atoms.
 
   - `:format_module_attributes` - Configure which module attributes to format.
     Supports four input types for maximum flexibility:
@@ -254,7 +256,7 @@ defmodule DprintMarkdownFormatter do
       elixir_opts = Keyword.drop(opts, @dprint_opts)
 
       case Code.format_string!(formatted_content, elixir_opts) do
-        [] -> {:ok, ""}
+        "" -> {:ok, ""}
         formatted -> {:ok, IO.iodata_to_binary([formatted, ?\n])}
       end
     end
