@@ -10,7 +10,27 @@ defmodule DprintMarkdownFormatter.Config do
   @typep strong_kind_option() :: :asterisks | :underscores
   @typep new_line_kind_option() :: :auto | :lf | :crlf
   @typep unordered_list_kind_option() :: :dashes | :asterisks
+  @typep heading_kind_option() :: :atx | :setext
   @typep module_attributes_option() :: nil | boolean() | [atom()]
+
+  @typep nif_config_map() :: %{
+           line_width: pos_integer(),
+           text_wrap: atom(),
+           emphasis_kind: atom(),
+           strong_kind: atom(),
+           new_line_kind: atom(),
+           unordered_list_kind: atom(),
+           heading_kind: atom()
+         }
+
+  @atom_choices %{
+    text_wrap: [:always, :never, :maintain],
+    emphasis_kind: [:asterisks, :underscores],
+    strong_kind: [:asterisks, :underscores],
+    new_line_kind: [:auto, :lf, :crlf],
+    unordered_list_kind: [:dashes, :asterisks],
+    heading_kind: [:atx, :setext]
+  }
 
   typed_structor enforce: true do
     field :line_width, pos_integer(), default: 80
@@ -19,6 +39,7 @@ defmodule DprintMarkdownFormatter.Config do
     field :strong_kind, strong_kind_option(), default: :asterisks
     field :new_line_kind, new_line_kind_option(), default: :auto
     field :unordered_list_kind, unordered_list_kind_option(), default: :dashes
+    field :heading_kind, heading_kind_option(), default: :atx
     field :format_module_attributes, module_attributes_option(), default: nil
   end
 
@@ -35,6 +56,7 @@ defmodule DprintMarkdownFormatter.Config do
         strong_kind: :asterisks,
         new_line_kind: :auto,
         unordered_list_kind: :dashes,
+        heading_kind: :atx,
         format_module_attributes: nil
       }
   """
@@ -59,12 +81,8 @@ defmodule DprintMarkdownFormatter.Config do
   ## Examples
 
       # With valid configuration in mix.exs
-      iex> DprintMarkdownFormatter.Config.load()
-      %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
-
-      # With invalid configuration values (logs warnings and uses defaults)
-      iex> DprintMarkdownFormatter.Config.load()
-      %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
+      DprintMarkdownFormatter.Config.load()
+      #=> %DprintMarkdownFormatter.Config{line_width: 80, text_wrap: :always}
   """
   @spec load() :: t()
   def load do
@@ -87,6 +105,18 @@ defmodule DprintMarkdownFormatter.Config do
 
       iex> DprintMarkdownFormatter.Config.from_keyword([format_module_attributes: true])
       %DprintMarkdownFormatter.Config{format_module_attributes: true}
+
+      iex> DprintMarkdownFormatter.Config.from_keyword([heading_kind: :setext]).heading_kind
+      :setext
+
+      iex> DprintMarkdownFormatter.Config.from_keyword([heading_kind: "setext"]).heading_kind
+      :setext
+
+      iex> DprintMarkdownFormatter.Config.from_keyword([heading_kind: "atx"]).heading_kind
+      :atx
+
+      iex> DprintMarkdownFormatter.Config.from_keyword([heading_kind: :invalid]).heading_kind
+      :atx
   """
   @spec from_keyword(keyword()) :: t()
   def from_keyword(opts) when is_list(opts) do
@@ -120,6 +150,10 @@ defmodule DprintMarkdownFormatter.Config do
       iex> config = %DprintMarkdownFormatter.Config{text_wrap: :always}
       iex> DprintMarkdownFormatter.Config.merge(config, [text_wrap: :never, line_width: 120])
       %DprintMarkdownFormatter.Config{text_wrap: :never, line_width: 120}
+
+      iex> config = %DprintMarkdownFormatter.Config{heading_kind: :atx}
+      iex> DprintMarkdownFormatter.Config.merge(config, [heading_kind: :setext]).heading_kind
+      :setext
   """
   @spec merge(t(), keyword()) :: t()
   def merge(%__MODULE__{} = config, opts) when is_list(opts) do
@@ -147,16 +181,17 @@ defmodule DprintMarkdownFormatter.Config do
 
       iex> config = %DprintMarkdownFormatter.Config{line_width: 100, text_wrap: :never}
       iex> DprintMarkdownFormatter.Config.to_nif_config(config)
-      %{line_width: 100, text_wrap: :never, emphasis_kind: :asterisks}
+      %{
+        line_width: 100,
+        text_wrap: :never,
+        emphasis_kind: :asterisks,
+        strong_kind: :asterisks,
+        new_line_kind: :auto,
+        unordered_list_kind: :dashes,
+        heading_kind: :atx
+      }
   """
-  @spec to_nif_config(t()) :: %{
-          line_width: non_neg_integer(),
-          text_wrap: atom(),
-          emphasis_kind: atom(),
-          strong_kind: atom(),
-          new_line_kind: atom(),
-          unordered_list_kind: atom()
-        }
+  @spec to_nif_config(t()) :: nif_config_map()
   def to_nif_config(%__MODULE__{} = config) do
     %{
       line_width: config.line_width,
@@ -164,7 +199,8 @@ defmodule DprintMarkdownFormatter.Config do
       emphasis_kind: config.emphasis_kind,
       strong_kind: config.strong_kind,
       new_line_kind: config.new_line_kind,
-      unordered_list_kind: config.unordered_list_kind
+      unordered_list_kind: config.unordered_list_kind,
+      heading_kind: config.heading_kind
     }
   end
 
@@ -202,76 +238,8 @@ defmodule DprintMarkdownFormatter.Config do
   defp validate_option(:line_width, value),
     do: {:error, "must be a positive integer, got: #{inspect(value)}"}
 
-  defp validate_option(:text_wrap, value) when value in [:always, :never, :maintain],
-    do: {:ok, value}
-
-  defp validate_option(:text_wrap, value) when is_binary(value) do
-    case value do
-      "always" -> {:ok, :always}
-      "never" -> {:ok, :never}
-      "maintain" -> {:ok, :maintain}
-      _invalid_value -> {:error, "must be :always, :never, or :maintain, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:text_wrap, value),
-    do: {:error, "must be :always, :never, or :maintain, got: #{inspect(value)}"}
-
-  defp validate_option(:emphasis_kind, value) when value in [:asterisks, :underscores],
-    do: {:ok, value}
-
-  defp validate_option(:emphasis_kind, value) when is_binary(value) do
-    case value do
-      "asterisks" -> {:ok, :asterisks}
-      "underscores" -> {:ok, :underscores}
-      _invalid_value -> {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:emphasis_kind, value),
-    do: {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-
-  defp validate_option(:strong_kind, value) when value in [:asterisks, :underscores],
-    do: {:ok, value}
-
-  defp validate_option(:strong_kind, value) when is_binary(value) do
-    case value do
-      "asterisks" -> {:ok, :asterisks}
-      "underscores" -> {:ok, :underscores}
-      _invalid_value -> {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:strong_kind, value),
-    do: {:error, "must be :asterisks or :underscores, got: #{inspect(value)}"}
-
-  defp validate_option(:new_line_kind, value) when value in [:auto, :lf, :crlf], do: {:ok, value}
-
-  defp validate_option(:new_line_kind, value) when is_binary(value) do
-    case value do
-      "auto" -> {:ok, :auto}
-      "lf" -> {:ok, :lf}
-      "crlf" -> {:ok, :crlf}
-      _invalid_value -> {:error, "must be :auto, :lf, or :crlf, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:new_line_kind, value),
-    do: {:error, "must be :auto, :lf, or :crlf, got: #{inspect(value)}"}
-
-  defp validate_option(:unordered_list_kind, value) when value in [:dashes, :asterisks],
-    do: {:ok, value}
-
-  defp validate_option(:unordered_list_kind, value) when is_binary(value) do
-    case value do
-      "dashes" -> {:ok, :dashes}
-      "asterisks" -> {:ok, :asterisks}
-      _invalid_value -> {:error, "must be :dashes or :asterisks, got: #{inspect(value)}"}
-    end
-  end
-
-  defp validate_option(:unordered_list_kind, value),
-    do: {:error, "must be :dashes or :asterisks, got: #{inspect(value)}"}
+  defp validate_option(key, value) when is_map_key(@atom_choices, key),
+    do: validate_atom_choice(value, @atom_choices[key])
 
   defp validate_option(:format_module_attributes, nil), do: {:ok, nil}
   defp validate_option(:format_module_attributes, value) when is_boolean(value), do: {:ok, value}
@@ -289,4 +257,36 @@ defmodule DprintMarkdownFormatter.Config do
 
   defp validate_option(key, value),
     do: {:error, "unknown configuration option #{key} with value #{inspect(value)}"}
+
+  defp validate_atom_choice(value, choices) when is_atom(value) do
+    if value in choices,
+      do: {:ok, value},
+      else: {:error, format_choice_error(choices, value)}
+  end
+
+  defp validate_atom_choice(value, choices) when is_binary(value) do
+    case Enum.find(choices, &(Atom.to_string(&1) == value)) do
+      nil -> {:error, format_choice_error(choices, value)}
+      atom -> {:ok, atom}
+    end
+  end
+
+  defp validate_atom_choice(value, choices),
+    do: {:error, format_choice_error(choices, value)}
+
+  defp format_choice_error(choices, value),
+    do: "must be #{format_choices(choices)}, got: #{inspect(value)}"
+
+  defp format_choices(choices) do
+    inspected = Enum.map(choices, &inspect/1)
+
+    case inspected do
+      [a, b] ->
+        "#{a} or #{b}"
+
+      list ->
+        {butlast, [last]} = Enum.split(list, -1)
+        "#{Enum.join(butlast, ", ")}, or #{last}"
+    end
+  end
 end

@@ -262,7 +262,8 @@ defmodule DprintMarkdownFormatterTest do
         emphasis_kind: :asterisks,
         strong_kind: :asterisks,
         new_line_kind: :auto,
-        unordered_list_kind: :asterisks
+        unordered_list_kind: :asterisks,
+        heading_kind: :atx
       }
 
       result = DprintMarkdownFormatter.Native.format_markdown(input, nif_config)
@@ -279,6 +280,33 @@ defmodule DprintMarkdownFormatterTest do
       assert_raise FunctionClauseError, fn ->
         DprintMarkdownFormatter.format(123, [])
       end
+    end
+  end
+
+  describe "format/2 with heading_kind" do
+    test "emits setext headings when heading_kind: :setext" do
+      assert DprintMarkdownFormatter.format("# Hello", heading_kind: :setext) ==
+               "Hello\n=====\n"
+    end
+
+    test "emits atx headings by default" do
+      assert DprintMarkdownFormatter.format("# Hello", []) == "# Hello\n"
+    end
+
+    test "runtime opts override mix.exs heading_kind" do
+      stub(Mix.Project, :config, fn ->
+        [dprint_markdown_formatter: [heading_kind: :setext]]
+      end)
+
+      assert DprintMarkdownFormatter.format("# Hello", heading_kind: :atx) == "# Hello\n"
+    end
+
+    test "invalid heading_kind does not crash; format/2 returns original contents" do
+      assert DprintMarkdownFormatter.format("# Hello", heading_kind: :bogus) == "# Hello"
+    end
+
+    test "runtime opts must be atoms; string values are rejected" do
+      assert DprintMarkdownFormatter.format("# Hello", heading_kind: "setext") == "# Hello"
     end
   end
 

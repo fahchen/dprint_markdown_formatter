@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustler = { version = "0.36.0" }
-dprint-plugin-markdown = "0.18.0"
+dprint-plugin-markdown = "0.21.1"
 dprint-core = "0.67.4"
 
 [features]

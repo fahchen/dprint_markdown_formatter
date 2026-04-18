@@ -1,5 +1,8 @@
 use dprint_core::configuration::NewLineKind;
-use dprint_plugin_markdown::{configuration::Configuration, format_text};
+use dprint_plugin_markdown::configuration::{
+    Configuration, EmphasisKind, HeadingKind, StrongKind, TextWrap, UnorderedListKind,
+};
+use dprint_plugin_markdown::format_text;
 use rustler::{Atom, Term};
 use std::collections::HashMap;
 
@@ -11,6 +14,7 @@ rustler::atoms! {
     strong_kind,
     new_line_kind,
     unordered_list_kind,
+    heading_kind,
     always,
     never,
     maintain,
@@ -20,10 +24,12 @@ rustler::atoms! {
     lf,
     crlf,
     dashes,
+    atx,
+    setext,
 }
 
 /// Simple NIF function that receives a config map from Elixir
-/// The map contains only the 6 dprint-related fields (no format_module_attributes)
+/// The map contains only the 7 dprint-related fields (no format_module_attributes)
 /// Elixir is the single source of truth for configuration validation
 #[rustler::nif]
 fn format_markdown(text: String, config: HashMap<Atom, Term>) -> Result<String, String> {
@@ -55,6 +61,7 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
     let strong_kind = build_strong_kind(&map)?;
     let new_line_kind = build_new_line_kind(&map)?;
     let unordered_list_kind = build_unordered_list_kind(&map)?;
+    let heading_kind = build_heading_kind(&map)?;
 
     Ok(Configuration {
         line_width,
@@ -63,6 +70,8 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
         strong_kind,
         new_line_kind,
         unordered_list_kind,
+        heading_kind,
+        tags: HashMap::new(),
         ignore_directive: "dprint-ignore".to_string(),
         ignore_start_directive: "dprint-ignore-start".to_string(),
         ignore_end_directive: "dprint-ignore-end".to_string(),
@@ -70,101 +79,59 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
     })
 }
 
-/// Build text wrap configuration from config map
-fn build_text_wrap(
-    map: &HashMap<Atom, Term>,
-) -> Result<dprint_plugin_markdown::configuration::TextWrap, String> {
-    let wrap_atom = map
-        .get(&text_wrap())
-        .ok_or("Missing text_wrap")?
-        .decode::<Atom>()
-        .map_err(|_| "Invalid text_wrap")?;
+/// Decode an atom-valued config entry into a target enum variant.
+macro_rules! build_enum_option {
+    (
+        $fn_name:ident,
+        $key:ident,
+        $ret:ty,
+        { $( $atom_fn:ident => $variant:expr ),+ $(,)? }
+    ) => {
+        fn $fn_name(map: &HashMap<Atom, Term>) -> Result<$ret, String> {
+            let decoded = map
+                .get(&$key())
+                .ok_or_else(|| format!("Missing {}", stringify!($key)))?
+                .decode::<Atom>()
+                .map_err(|_| format!("Invalid {}", stringify!($key)))?;
 
-    match wrap_atom {
-        atom if atom == always() => Ok(dprint_plugin_markdown::configuration::TextWrap::Always),
-        atom if atom == never() => Ok(dprint_plugin_markdown::configuration::TextWrap::Never),
-        atom if atom == maintain() => Ok(dprint_plugin_markdown::configuration::TextWrap::Maintain),
-        _ => Err("Invalid text_wrap value".to_string()),
-    }
+            match decoded {
+                $( atom if atom == $atom_fn() => Ok($variant), )+
+                _ => Err(format!("Invalid {} value", stringify!($key))),
+            }
+        }
+    };
 }
 
-/// Build emphasis kind configuration from config map
-fn build_emphasis_kind(
-    map: &HashMap<Atom, Term>,
-) -> Result<dprint_plugin_markdown::configuration::EmphasisKind, String> {
-    let kind_atom = map
-        .get(&emphasis_kind())
-        .ok_or("Missing emphasis_kind")?
-        .decode::<Atom>()
-        .map_err(|_| "Invalid emphasis_kind")?;
+build_enum_option!(build_text_wrap, text_wrap, TextWrap, {
+    always => TextWrap::Always,
+    never => TextWrap::Never,
+    maintain => TextWrap::Maintain,
+});
 
-    match kind_atom {
-        atom if atom == asterisks() => {
-            Ok(dprint_plugin_markdown::configuration::EmphasisKind::Asterisks)
-        }
-        atom if atom == underscores() => {
-            Ok(dprint_plugin_markdown::configuration::EmphasisKind::Underscores)
-        }
-        _ => Err("Invalid emphasis_kind value".to_string()),
-    }
-}
+build_enum_option!(build_emphasis_kind, emphasis_kind, EmphasisKind, {
+    asterisks => EmphasisKind::Asterisks,
+    underscores => EmphasisKind::Underscores,
+});
 
-/// Build strong kind configuration from config map
-fn build_strong_kind(
-    map: &HashMap<Atom, Term>,
-) -> Result<dprint_plugin_markdown::configuration::StrongKind, String> {
-    let kind_atom = map
-        .get(&strong_kind())
-        .ok_or("Missing strong_kind")?
-        .decode::<Atom>()
-        .map_err(|_| "Invalid strong_kind")?;
+build_enum_option!(build_strong_kind, strong_kind, StrongKind, {
+    asterisks => StrongKind::Asterisks,
+    underscores => StrongKind::Underscores,
+});
 
-    match kind_atom {
-        atom if atom == asterisks() => {
-            Ok(dprint_plugin_markdown::configuration::StrongKind::Asterisks)
-        }
-        atom if atom == underscores() => {
-            Ok(dprint_plugin_markdown::configuration::StrongKind::Underscores)
-        }
-        _ => Err("Invalid strong_kind value".to_string()),
-    }
-}
+build_enum_option!(build_new_line_kind, new_line_kind, NewLineKind, {
+    auto => NewLineKind::Auto,
+    lf => NewLineKind::LineFeed,
+    crlf => NewLineKind::CarriageReturnLineFeed,
+});
 
-/// Build new line kind configuration from config map
-fn build_new_line_kind(map: &HashMap<Atom, Term>) -> Result<NewLineKind, String> {
-    let kind_atom = map
-        .get(&new_line_kind())
-        .ok_or("Missing new_line_kind")?
-        .decode::<Atom>()
-        .map_err(|_| "Invalid new_line_kind")?;
+build_enum_option!(build_unordered_list_kind, unordered_list_kind, UnorderedListKind, {
+    dashes => UnorderedListKind::Dashes,
+    asterisks => UnorderedListKind::Asterisks,
+});
 
-    match kind_atom {
-        atom if atom == auto() => Ok(NewLineKind::Auto),
-        atom if atom == lf() => Ok(NewLineKind::LineFeed),
-        atom if atom == crlf() => Ok(NewLineKind::CarriageReturnLineFeed),
-        _ => Err("Invalid new_line_kind value".to_string()),
-    }
-}
-
-/// Build unordered list kind configuration from config map
-fn build_unordered_list_kind(
-    map: &HashMap<Atom, Term>,
-) -> Result<dprint_plugin_markdown::configuration::UnorderedListKind, String> {
-    let kind_atom = map
-        .get(&unordered_list_kind())
-        .ok_or("Missing unordered_list_kind")?
-        .decode::<Atom>()
-        .map_err(|_| "Invalid unordered_list_kind")?;
-
-    match kind_atom {
-        atom if atom == dashes() => {
-            Ok(dprint_plugin_markdown::configuration::UnorderedListKind::Dashes)
-        }
-        atom if atom == asterisks() => {
-            Ok(dprint_plugin_markdown::configuration::UnorderedListKind::Asterisks)
-        }
-        _ => Err("Invalid unordered_list_kind value".to_string()),
-    }
-}
+build_enum_option!(build_heading_kind, heading_kind, HeadingKind, {
+    atx => HeadingKind::Atx,
+    setext => HeadingKind::Setext,
+});
 
 rustler::init!("Elixir.DprintMarkdownFormatter.Native");
