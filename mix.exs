@@ -33,11 +33,11 @@ defmodule DprintMarkdownFormatter.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:rustler_precompiled, "~> 0.8"},
-      {:rustler, "~> 0.36.0", optional: true},
+      {:rustler_precompiled, "~> 0.9"},
+      {:rustler, "~> 0.38", optional: true},
       {:sourceror, "~> 1.0"},
-      {:typed_structor, "~> 0.5"},
-      {:mimic, "~> 1.7", only: :test},
+      {:typed_structor, "~> 0.6"},
+      {:mimic, "~> 2.0", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
@@ -54,7 +54,6 @@ defmodule DprintMarkdownFormatter.MixProject do
         "mix.exs",
         "README.md",
         "LICENSE",
-        "llms.txt",
         "native/dprint_markdown_formatter/*.*",
         "native/dprint_markdown_formatter/.cargo/",
         "native/dprint_markdown_formatter/src/",
@@ -85,7 +84,7 @@ defmodule DprintMarkdownFormatter.MixProject do
       main: "readme",
       source_url: @source_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "llms.txt"],
+      extras: ["README.md"],
       groups_for_modules: [
         Core: [
           DprintMarkdownFormatter,

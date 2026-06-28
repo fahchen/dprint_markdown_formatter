@@ -1,6 +1,7 @@
 use dprint_core::configuration::NewLineKind;
 use dprint_plugin_markdown::configuration::{
-    Configuration, EmphasisKind, HeadingKind, StrongKind, TextWrap, UnorderedListKind,
+    Configuration, EmphasisKind, HeadingKind, ListIndentKind, StrongKind, TextWrap,
+    UnorderedListKind,
 };
 use dprint_plugin_markdown::format_text;
 use rustler::{Atom, Term};
@@ -15,6 +16,7 @@ rustler::atoms! {
     new_line_kind,
     unordered_list_kind,
     heading_kind,
+    list_indent_kind,
     always,
     never,
     maintain,
@@ -26,6 +28,8 @@ rustler::atoms! {
     dashes,
     atx,
     setext,
+    common_mark,
+    python_markdown,
 }
 
 /// Simple NIF function that receives a config map from Elixir
@@ -62,6 +66,7 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
     let new_line_kind = build_new_line_kind(&map)?;
     let unordered_list_kind = build_unordered_list_kind(&map)?;
     let heading_kind = build_heading_kind(&map)?;
+    let list_indent_kind = build_list_indent_kind(&map)?;
 
     Ok(Configuration {
         line_width,
@@ -71,6 +76,7 @@ fn build_dprint_config(map: HashMap<Atom, Term>) -> Result<Configuration, String
         new_line_kind,
         unordered_list_kind,
         heading_kind,
+        list_indent_kind,
         tags: HashMap::new(),
         ignore_directive: "dprint-ignore".to_string(),
         ignore_start_directive: "dprint-ignore-start".to_string(),
@@ -132,6 +138,11 @@ build_enum_option!(build_unordered_list_kind, unordered_list_kind, UnorderedList
 build_enum_option!(build_heading_kind, heading_kind, HeadingKind, {
     atx => HeadingKind::Atx,
     setext => HeadingKind::Setext,
+});
+
+build_enum_option!(build_list_indent_kind, list_indent_kind, ListIndentKind, {
+    common_mark => ListIndentKind::CommonMark,
+    python_markdown => ListIndentKind::PythonMarkdown,
 });
 
 rustler::init!("Elixir.DprintMarkdownFormatter.Native");

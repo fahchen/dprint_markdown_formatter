@@ -44,6 +44,9 @@ defmodule DprintMarkdownFormatter do
     (default: `:dashes`)
   - `:heading_kind` - Heading style for level 1/2 headings: `:atx` (`#`/`##`),
     `:setext` (`===`/`---`) (default: `:atx`)
+  - `:list_indent_kind` - Nested list indent style: `:common_mark` (indent to
+    marker width), `:python_markdown` (indent to at least 4 spaces) (default:
+    `:common_mark`)
 
   **Note:** Configuration values can be provided as atoms (`:never`) or strings
   (`"never"`) via `mix.exs`. Runtime options passed to `format/2` must be atoms.

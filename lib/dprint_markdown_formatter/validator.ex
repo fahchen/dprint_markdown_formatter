@@ -92,6 +92,7 @@ defmodule DprintMarkdownFormatter.Validator do
          {:ok, _new_line_kind} <- validate_new_line_kind(config.new_line_kind),
          {:ok, _unordered_list_kind} <- validate_unordered_list_kind(config.unordered_list_kind),
          {:ok, _heading_kind} <- validate_heading_kind(config.heading_kind),
+         {:ok, _list_indent_kind} <- validate_list_indent_kind(config.list_indent_kind),
          {:ok, _format_module_attributes} <-
            validate_format_module_attributes(config.format_module_attributes) do
       {:ok, config}
@@ -164,6 +165,10 @@ defmodule DprintMarkdownFormatter.Validator do
   defp validate_option_value(:new_line_kind, value), do: validate_new_line_kind(value)
   defp validate_option_value(:unordered_list_kind, value), do: validate_unordered_list_kind(value)
   defp validate_option_value(:heading_kind, value), do: validate_heading_kind(value)
+
+  defp validate_option_value(:list_indent_kind, value),
+    do: validate_list_indent_kind(value)
+
   defp validate_option_value(:extension, value), do: validate_extension(value)
   defp validate_option_value(:sigil, value), do: validate_sigil(value)
 
@@ -211,6 +216,9 @@ defmodule DprintMarkdownFormatter.Validator do
 
   defp validate_heading_kind(value),
     do: validate_atom_choice(value, :heading_kind, [:atx, :setext])
+
+  defp validate_list_indent_kind(value),
+    do: validate_atom_choice(value, :list_indent_kind, [:common_mark, :python_markdown])
 
   defp validate_atom_choice(value, field, valid_choices) when is_atom(value) do
     if value in valid_choices do

@@ -20,7 +20,7 @@ jobs:
       otp-version: ${{ steps.setup-env.outputs.otp-version }}
       elixir-version: ${{ steps.setup-env.outputs.elixir-version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: setup-env
         uses: ./.github/actions/setup-elixir-rust
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-elixir-rust
 
@@ -57,7 +57,7 @@ jobs:
       matrix:
         check: [credo, dialyzer]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-elixir-rust
         with:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Cache Dialyzer PLTs
         if: matrix.check == 'dialyzer'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: priv/plts
           key: ${{ runner.os }}-plt-${{ needs.build.outputs.otp-version }}-${{ needs.build.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
@@ -97,7 +97,7 @@ jobs:
           - elixir: "1.16.3"
             otp: "26.2"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup-elixir-rust
         with:

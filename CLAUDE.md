@@ -65,7 +65,11 @@ end
 - `:text_wrap` - "always", "never", "maintain" (default: "always")
 - `:emphasis_kind` - "asterisks", "underscores" (default: "asterisks")
 - `:strong_kind` - "asterisks", "underscores" (default: "asterisks")
+- `:new_line_kind` - "auto", "lf", "crlf" (default: "auto")
 - `:unordered_list_kind` - "dashes", "asterisks" (default: "dashes")
+- `:heading_kind` - "atx", "setext" (default: "atx")
+- `:list_indent_kind` - "common_mark", "python_markdown" (default:
+  "common_mark")
 - `:format_module_attributes` - Configure attribute formatting:
   - `nil` (default) - Skip all formatting
   - `true` - Format `:moduledoc`, `:doc`, `:typedoc`, `:shortdoc`, `:deprecated`

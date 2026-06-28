@@ -11,6 +11,7 @@ defmodule DprintMarkdownFormatter.Config do
   @typep new_line_kind_option() :: :auto | :lf | :crlf
   @typep unordered_list_kind_option() :: :dashes | :asterisks
   @typep heading_kind_option() :: :atx | :setext
+  @typep list_indent_kind_option() :: :common_mark | :python_markdown
   @typep module_attributes_option() :: nil | boolean() | [atom()]
 
   @typep nif_config_map() :: %{
@@ -20,7 +21,8 @@ defmodule DprintMarkdownFormatter.Config do
            strong_kind: atom(),
            new_line_kind: atom(),
            unordered_list_kind: atom(),
-           heading_kind: atom()
+           heading_kind: atom(),
+           list_indent_kind: atom()
          }
 
   @atom_choices %{
@@ -29,7 +31,8 @@ defmodule DprintMarkdownFormatter.Config do
     strong_kind: [:asterisks, :underscores],
     new_line_kind: [:auto, :lf, :crlf],
     unordered_list_kind: [:dashes, :asterisks],
-    heading_kind: [:atx, :setext]
+    heading_kind: [:atx, :setext],
+    list_indent_kind: [:common_mark, :python_markdown]
   }
 
   typed_structor enforce: true do
@@ -40,6 +43,7 @@ defmodule DprintMarkdownFormatter.Config do
     field :new_line_kind, new_line_kind_option(), default: :auto
     field :unordered_list_kind, unordered_list_kind_option(), default: :dashes
     field :heading_kind, heading_kind_option(), default: :atx
+    field :list_indent_kind, list_indent_kind_option(), default: :common_mark
     field :format_module_attributes, module_attributes_option(), default: nil
   end
 
@@ -57,6 +61,7 @@ defmodule DprintMarkdownFormatter.Config do
         new_line_kind: :auto,
         unordered_list_kind: :dashes,
         heading_kind: :atx,
+        list_indent_kind: :common_mark,
         format_module_attributes: nil
       }
   """
@@ -188,7 +193,8 @@ defmodule DprintMarkdownFormatter.Config do
         strong_kind: :asterisks,
         new_line_kind: :auto,
         unordered_list_kind: :dashes,
-        heading_kind: :atx
+        heading_kind: :atx,
+        list_indent_kind: :common_mark
       }
   """
   @spec to_nif_config(t()) :: nif_config_map()
@@ -200,7 +206,8 @@ defmodule DprintMarkdownFormatter.Config do
       strong_kind: config.strong_kind,
       new_line_kind: config.new_line_kind,
       unordered_list_kind: config.unordered_list_kind,
-      heading_kind: config.heading_kind
+      heading_kind: config.heading_kind,
+      list_indent_kind: config.list_indent_kind
     }
   end
 

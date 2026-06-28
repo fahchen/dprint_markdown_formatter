@@ -26,6 +26,7 @@ defmodule DprintMarkdownFormatter.Native do
   @typep new_line_kind_option() :: :auto | :lf | :crlf
   @typep unordered_list_kind_option() :: :dashes | :asterisks
   @typep heading_kind_option() :: :atx | :setext
+  @typep list_indent_kind_option() :: :common_mark | :python_markdown
 
   @typep format_options() :: %{
            line_width: pos_integer(),
@@ -34,7 +35,8 @@ defmodule DprintMarkdownFormatter.Native do
            strong_kind: strong_kind_option(),
            new_line_kind: new_line_kind_option(),
            unordered_list_kind: unordered_list_kind_option(),
-           heading_kind: heading_kind_option()
+           heading_kind: heading_kind_option(),
+           list_indent_kind: list_indent_kind_option()
          }
 
   @doc """
@@ -55,7 +57,7 @@ defmodule DprintMarkdownFormatter.Native do
 
   ## Examples
 
-      iex> options = %{line_width: 80, text_wrap: :always, emphasis_kind: :asterisks, strong_kind: :asterisks, new_line_kind: :auto, unordered_list_kind: :dashes, heading_kind: :atx}
+      iex> options = %{line_width: 80, text_wrap: :always, emphasis_kind: :asterisks, strong_kind: :asterisks, new_line_kind: :auto, unordered_list_kind: :dashes, heading_kind: :atx, list_indent_kind: :common_mark}
       iex> DprintMarkdownFormatter.Native.format_markdown("# Hello    World", options)
       {:ok, "# Hello World\\n"}
 

@@ -88,14 +88,17 @@ end
 
 ### Available Options
 
-| Option                      | Default      | Description                                     |
-| --------------------------- | ------------ | ----------------------------------------------- |
-| `:line_width`               | `80`         | Maximum line width                              |
-| `:text_wrap`                | `:always`    | Text wrapping: `:always`, `:never`, `:maintain` |
-| `:emphasis_kind`            | `:asterisks` | Emphasis style: `:asterisks`, `:underscores`    |
-| `:strong_kind`              | `:asterisks` | Strong text style: `:asterisks`, `:underscores` |
-| `:unordered_list_kind`      | `:dashes`    | List style: `:dashes`, `:asterisks`             |
-| `:format_module_attributes` | `nil`        | Module attribute formatting (see below)         |
+| Option                      | Default        | Description                                            |
+| --------------------------- | -------------- | ------------------------------------------------------ |
+| `:line_width`               | `80`           | Maximum line width                                     |
+| `:text_wrap`                | `:always`      | Text wrapping: `:always`, `:never`, `:maintain`        |
+| `:emphasis_kind`            | `:asterisks`   | Emphasis style: `:asterisks`, `:underscores`           |
+| `:strong_kind`              | `:asterisks`   | Strong text style: `:asterisks`, `:underscores`        |
+| `:new_line_kind`            | `:auto`        | Line ending type: `:auto`, `:lf`, `:crlf`              |
+| `:unordered_list_kind`      | `:dashes`      | List style: `:dashes`, `:asterisks`                    |
+| `:heading_kind`             | `:atx`         | Heading style: `:atx` (`#`), `:setext` (`===`)         |
+| `:list_indent_kind`         | `:common_mark` | Nested list indent: `:common_mark`, `:python_markdown` |
+| `:format_module_attributes` | `nil`          | Module attribute formatting (see below)                |
 
 **Note:** Configuration values can be provided as atoms (`:never`) or strings
 (`"never"`). Atoms are preferred for consistency with Elixir conventions.
