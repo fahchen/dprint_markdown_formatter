@@ -38,6 +38,10 @@ runs:
         version-type: ${{ inputs.elixir-version == '' && 'strict' || '' }}
         elixir-version: ${{ inputs.elixir-version }}
         otp-version: ${{ inputs.otp-version }}
+        # builds.hex.pm CDN cert trips OTP TLS validation (key_usage_mismatch); fall back to jsdelivr
+        hexpm-mirrors: |
+          https://builds.hex.pm
+          https://cdn.jsdelivr.net/hex
 
     - name: Cache Elixir Dependencies
       uses: actions/cache@v5
