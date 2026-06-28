@@ -87,15 +87,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - elixir: "1.18.3"
-            otp: "27.2"
+          - elixir: "1.20.0"
+            otp: "29.0"
             warnings_as_errors: true
-          - elixir: "1.17.3"
-            otp: "27.2"
-          - elixir: "1.17.3"
-            otp: "26.2"
-          - elixir: "1.16.3"
-            otp: "26.2"
+          - elixir: "1.19.5"
+            otp: "28.4"
+          - elixir: "1.18.4"
+            otp: "27.3.4.4"
     steps:
       - uses: actions/checkout@v5
 

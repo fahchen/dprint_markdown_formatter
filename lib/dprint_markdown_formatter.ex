@@ -92,8 +92,6 @@ defmodule DprintMarkdownFormatter do
 
   @behaviour Mix.Tasks.Format
 
-  require Logger
-
   alias DprintMarkdownFormatter.AstProcessor
   alias DprintMarkdownFormatter.Config
   alias DprintMarkdownFormatter.Error
