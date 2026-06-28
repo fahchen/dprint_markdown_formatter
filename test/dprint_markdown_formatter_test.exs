@@ -263,7 +263,8 @@ defmodule DprintMarkdownFormatterTest do
         strong_kind: :asterisks,
         new_line_kind: :auto,
         unordered_list_kind: :asterisks,
-        heading_kind: :atx
+        heading_kind: :atx,
+        list_indent_kind: :common_mark
       }
 
       result = DprintMarkdownFormatter.Native.format_markdown(input, nif_config)
@@ -307,6 +308,22 @@ defmodule DprintMarkdownFormatterTest do
 
     test "runtime opts must be atoms; string values are rejected" do
       assert DprintMarkdownFormatter.format("# Hello", heading_kind: "setext") == "# Hello"
+    end
+  end
+
+  describe "format/2 with list_indent_kind" do
+    test "defaults to common_mark (marker-width indent)" do
+      assert DprintMarkdownFormatter.format("- a\n  - b", []) == "- a\n  - b\n"
+    end
+
+    test "python_markdown indents nested lists to at least 4 spaces" do
+      assert DprintMarkdownFormatter.format("- a\n  - b", list_indent_kind: :python_markdown) ==
+               "- a\n    - b\n"
+    end
+
+    test "invalid list_indent_kind does not crash; format/2 returns original contents" do
+      assert DprintMarkdownFormatter.format("- a\n  - b", list_indent_kind: :bogus) ==
+               "- a\n  - b"
     end
   end
 

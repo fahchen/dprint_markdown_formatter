@@ -27,37 +27,37 @@ jobs:
       matrix:
         nif: ["2.16", "2.17"]
         job:
-          - { target: x86_64-apple-darwin, os: macos-13 }
-          # Use native Apple Silicon runner for aarch64-apple-darwin to avoid cross-compilation issues
+          # macos-13 (Intel) runners are being retired and starve the queue; build x86_64 via cross-compile on Apple Silicon
+          - { target: x86_64-apple-darwin, os: macos-14 }
           - { target: aarch64-apple-darwin, os: macos-14 }
           - {
               target: aarch64-unknown-linux-gnu,
-              os: ubuntu-22.04,
+              os: ubuntu-24.04,
               use-cross: true,
             }
           - {
               target: aarch64-unknown-linux-musl,
-              os: ubuntu-22.04,
+              os: ubuntu-24.04,
               use-cross: true,
             }
-          - { target: x86_64-pc-windows-gnu, os: windows-2022 }
-          - { target: x86_64-pc-windows-msvc, os: windows-2022 }
-          - { target: aarch64-pc-windows-msvc, os: windows-2022 }
-          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: x86_64-pc-windows-gnu, os: windows-2025 }
+          - { target: x86_64-pc-windows-msvc, os: windows-2025 }
+          - { target: aarch64-pc-windows-msvc, os: windows-2025 }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-24.04 }
           - {
               target: x86_64-unknown-linux-musl,
-              os: ubuntu-22.04,
+              os: ubuntu-24.04,
               use-cross: true,
             }
           - {
               target: riscv64gc-unknown-linux-gnu,
-              os: ubuntu-22.04,
+              os: ubuntu-24.04,
               use-cross: true,
             }
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract project version
         shell: bash
@@ -76,7 +76,7 @@ jobs:
 
       - name: Build the project
         id: build-crate
-        uses: philss/rustler-precompiled-action@v1.1.4
+        uses: philss/rustler-precompiled-action@v1.1.5
         with:
           project-name: dprint_markdown_formatter
           project-version: ${{ env.PROJECT_VERSION }}
@@ -87,13 +87,13 @@ jobs:
           project-dir: native/dprint_markdown_formatter
 
       - name: Artifact upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.build-crate.outputs.file-name }}
           path: ${{ steps.build-crate.outputs.file-path }}
 
       - name: Publish archives and packages
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             ${{ steps.build-crate.outputs.file-path }}
